@@ -288,6 +288,16 @@ function DesktopHeader({
               {item.title}
             </Link>
           ))}
+          <Link
+            key={'static'}
+            to={'/static'}
+            prefetch="intent"
+            className={({isActive}) =>
+              isActive ? 'pb-1 border-b -mb-px' : 'pb-1'
+            }
+          >
+            {'Static'}
+          </Link>
         </nav>
       </div>
       <div className="flex items-center gap-1">
