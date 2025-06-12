@@ -25,6 +25,7 @@ import {
 } from '@shopify/hydrogen';
 import invariant from 'tiny-invariant';
 
+import {ThirdParty} from '~/components/ThirdParty';
 import {PageLayout} from '~/components/PageLayout';
 import {GenericError} from '~/components/GenericError';
 import {NotFound} from '~/components/NotFound';
@@ -166,6 +167,7 @@ function Layout({children}: {children?: React.ReactNode}) {
               layout={data.layout}
             >
               {children}
+              <ThirdParty />
             </PageLayout>
           </Analytics.Provider>
         ) : (
