@@ -1,6 +1,6 @@
 export async function loader() {
   // sleep for 3 seconds to simulate a slow network request
-  await new Promise((resolve) => setTimeout(resolve, 3000));
+  await new Promise((resolve) => setTimeout(resolve, 2000));
   return null;
 }
 
