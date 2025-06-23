@@ -1,5 +1,5 @@
 diff --git a/node_modules/@shopify/hydrogen/dist/development/index.js b/node_modules/@shopify/hydrogen/dist/development/index.js
-index 4ea2dc1..531bc53 100644
+index 4ea2dc1..978ae85 100644
 --- a/node_modules/@shopify/hydrogen/dist/development/index.js
 +++ b/node_modules/@shopify/hydrogen/dist/development/index.js
 @@ -29,7 +29,11 @@ function AnalyticsView(props) {
@@ -251,55 +251,66 @@ index 4ea2dc1..531bc53 100644
    );
    if (!!shop) {
      if (/\/68817551382$/.test(shop.shopId)) {
-@@ -880,34 +925,29 @@ function AnalyticsProvider({
+@@ -880,34 +925,34 @@ function AnalyticsProvider({
        }
      }
    }
 -  const value = useMemo(() => {
 -    return {
-+  console.log('-------------------------')
-+  console.log(JSON.stringify(value))
-+  console.log('-------------------------')
-+  const value = {
-       canTrack,
-       ...carts,
-       customData,
-       publish: canTrack() ? publish : () => {
-+        console.log('AnalyticsProvider: publish is no-op because canTrack is', canTrack());
-       },
-       shop,
-       subscribe,
-       register,
-       customerPrivacy: getCustomerPrivacy(),
-       privacyBanner: getPrivacyBanner()
+-      canTrack,
+-      ...carts,
+-      customData,
+-      publish: canTrack() ? publish : () => {
+-      },
+-      shop,
+-      subscribe,
+-      register,
+-      customerPrivacy: getCustomerPrivacy(),
+-      privacyBanner: getPrivacyBanner()
 -    };
 -  }, [
 -    analyticsLoaded,
--    canTrack,
++  const value = {
+     canTrack,
 -    carts,
 -    carts.cart?.updatedAt,
 -    carts.prevCart,
 -    publish,
 -    subscribe,
--    customData,
--    shop,
--    register,
++    ...carts,
+     customData,
++    publish: canTrack() ? publish : () => {
++      console.log('AnalyticsProvider: publish is no-op because canTrack is', canTrack());
++    },
+     shop,
++    subscribe,
+     register,
 -    JSON.stringify(registers),
 -    getCustomerPrivacy,
 -    getPrivacyBanner
 -  ]);
++    customerPrivacy: getCustomerPrivacy(),
++    privacyBanner: getPrivacyBanner()
 +  }
-+    // listen to shopifyCustomerPrivacyApiLoaded custom event
++  console.log('-------------------------')
++  console.log(JSON.stringify(value))
++  console.log('-------------------------')
++
++  // listen to shopifyCustomerPrivacyApiLoaded custom event
 +  useEffect(() => {
 +    function shopifyCustomerPrivacyApiLoaded(event) {
 +      console.log('--> privacy api loaded event', event);
 +    }
 +    window.addEventListener('shopifyCustomerPrivacyApiLoaded', shopifyCustomerPrivacyApiLoaded);
++
++    return () => {
++      window.removeEventListener('shopifyCustomerPrivacyApiLoaded', shopifyCustomerPrivacyApiLoaded);
++    }
 +  }, []);
    return /* @__PURE__ */ jsxs(AnalyticsContext.Provider, { value, children: [
      children,
      !!shop && /* @__PURE__ */ jsx(AnalyticsPageView, {}),
-@@ -918,7 +958,10 @@ function AnalyticsProvider({
+@@ -918,7 +963,10 @@ function AnalyticsProvider({
          consent,
          onReady: () => {
            listenerSet.current = true;
