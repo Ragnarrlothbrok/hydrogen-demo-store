@@ -8,6 +8,7 @@ export default defineConfig(({mode}) => {
   console.log(`Vite mode: ${mode}`);
   return {
     plugins: [
+      forceDevExports(),
       hydrogen(),
       oxygen(),
       remix({
@@ -54,3 +55,18 @@ export default defineConfig(({mode}) => {
     },
   };
 });
+
+const forceDevExports = () => {
+  return {
+    name: 'force-dev-exports',
+    config(config) {
+      config.resolve = config.resolve || {};
+      config.resolve.conditions = [
+        'development',
+        'module',
+        'import',
+        'default',
+      ];
+    },
+  };
+};
