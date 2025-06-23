@@ -1,0 +1,50 @@
+diff --git a/node_modules/@shopify/hydrogen/dist/development/index.js b/node_modules/@shopify/hydrogen/dist/development/index.js
+index 4ea2dc1..0243cfa 100644
+--- a/node_modules/@shopify/hydrogen/dist/development/index.js
++++ b/node_modules/@shopify/hydrogen/dist/development/index.js
+@@ -230,8 +230,10 @@ function useApisLoaded({
+   const setLoaded = {
+     customerPrivacy: () => {
+       if (withPrivacyBanner) {
++        console.log('Customer Privacy API loaded');
+         setApisLoaded((prev) => [true, prev[1]]);
+       } else {
++        console.log('Customer Privacy API loaded without Privacy Banner');
+         setApisLoaded(() => [true]);
+       }
+     },
+@@ -239,6 +241,7 @@ function useApisLoaded({
+       if (!withPrivacyBanner) {
+         return;
+       }
++      console.log('Privacy Banner API loaded');
+       setApisLoaded((prev) => [prev[0], true]);
+     }
+   };
+@@ -346,8 +349,14 @@ function ShopifyAnalytics({
+     locale: language,
+     checkoutDomain: !checkoutDomain ? "mock.shop" : checkoutDomain,
+     storefrontAccessToken: !storefrontAccessToken ? "abcdefghijklmnopqrstuvwxyz123456" : storefrontAccessToken,
+-    onVisitorConsentCollected: () => setPrivacyReady(true),
+-    onReady: () => setPrivacyReady(true)
++    onVisitorConsentCollected: () => {
++      setPrivacyReady(true)
++      console.log('useCustomerPrivacy: Customer Privacy API loaded, onVisitorConsentCollected called');
++    },
++    onReady: () => {
++      console.log('useCustomerPrivacy: Customer Privacy API loaded, onReady called');
++      setPrivacyReady(true)
++    }
+   });
+   useShopifyCookies({
+     hasUserConsent: privacyReady ? canTrack() : true,
+@@ -367,6 +376,9 @@ function ShopifyAnalytics({
+   }, [subscribe2]);
+   useEffect(() => {
+     if (shopifyReady && privacyReady) {
++      console.log(
++        'ShopifyAnalytics: Shopify Analytics API loaded'
++      )
+       shopifyAnalyticsReady();
+       onReady();
+     }

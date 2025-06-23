@@ -20,6 +20,10 @@ export default defineConfig({
     }),
     tsconfigPaths(),
   ],
+  mode: 'development',
+  resolve: {
+    conditions: ['development'],
+  },
   ssr: {
     optimizeDeps: {
       include: ['typographic-base'],

@@ -162,12 +162,12 @@ function Layout({children}: {children?: React.ReactNode}) {
             shop={data.shop}
             consent={data.consent}
           >
+            <ThirdParty />
             <PageLayout
               key={`${locale.language}-${locale.country}`}
               layout={data.layout}
             >
               {children}
-              <ThirdParty />
             </PageLayout>
           </Analytics.Provider>
         ) : (
