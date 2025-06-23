@@ -1,5 +1,5 @@
 diff --git a/node_modules/@shopify/hydrogen/dist/development/index.js b/node_modules/@shopify/hydrogen/dist/development/index.js
-index 4ea2dc1..c16d0bd 100644
+index 4ea2dc1..d9e1897 100644
 --- a/node_modules/@shopify/hydrogen/dist/development/index.js
 +++ b/node_modules/@shopify/hydrogen/dist/development/index.js
 @@ -29,7 +29,11 @@ function AnalyticsView(props) {
@@ -251,12 +251,13 @@ index 4ea2dc1..c16d0bd 100644
    );
    if (!!shop) {
      if (/\/68817551382$/.test(shop.shopId)) {
-@@ -880,34 +925,29 @@ function AnalyticsProvider({
+@@ -880,34 +925,27 @@ function AnalyticsProvider({
        }
      }
    }
 -  const value = useMemo(() => {
 -    return {
++  consol.log(JSON.stringify(value))
 +  const value = {
        canTrack,
        ...carts,
@@ -269,16 +270,7 @@ index 4ea2dc1..c16d0bd 100644
        register,
        customerPrivacy: getCustomerPrivacy(),
        privacyBanner: getPrivacyBanner()
-+  }
-+    // listen to shopifyCustomerPrivacyApiLoaded custom event
-+  useEffect(() => {
-+    function shopifyCustomerPrivacyApiLoaded(event) {
-+      console.log('--> privacy api loaded event', event);
-+    }
-+    window.addEventListener('shopifyCustomerPrivacyApiLoaded', shopifyCustomerPrivacyApiLoaded);
-+    return () => {
-+      window.removeEventListener('shopifyCustomerPrivacyApiLoaded', shopifyCustomerPrivacyApiLoaded);
-     };
+-    };
 -  }, [
 -    analyticsLoaded,
 -    canTrack,
@@ -294,11 +286,18 @@ index 4ea2dc1..c16d0bd 100644
 -    getCustomerPrivacy,
 -    getPrivacyBanner
 -  ]);
++  }
++    // listen to shopifyCustomerPrivacyApiLoaded custom event
++  useEffect(() => {
++    function shopifyCustomerPrivacyApiLoaded(event) {
++      console.log('--> privacy api loaded event', event);
++    }
++    window.addEventListener('shopifyCustomerPrivacyApiLoaded', shopifyCustomerPrivacyApiLoaded);
 +  }, []);
    return /* @__PURE__ */ jsxs(AnalyticsContext.Provider, { value, children: [
      children,
      !!shop && /* @__PURE__ */ jsx(AnalyticsPageView, {}),
-@@ -918,7 +958,10 @@ function AnalyticsProvider({
+@@ -918,7 +956,10 @@ function AnalyticsProvider({
          consent,
          onReady: () => {
            listenerSet.current = true;
