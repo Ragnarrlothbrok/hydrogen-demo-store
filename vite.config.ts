@@ -8,7 +8,6 @@ export default defineConfig(({mode}) => {
   console.log(`Vite mode: ${mode}`);
   return {
     plugins: [
-      forceDevExports(),
       hydrogen(),
       oxygen(),
       remix({
@@ -22,6 +21,7 @@ export default defineConfig(({mode}) => {
         },
       }),
       tsconfigPaths(),
+      forceDevExports(),
     ],
     resolve: {
       alias: [
