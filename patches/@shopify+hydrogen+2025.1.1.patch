@@ -1,5 +1,5 @@
 diff --git a/node_modules/@shopify/hydrogen/dist/development/index.js b/node_modules/@shopify/hydrogen/dist/development/index.js
-index 4ea2dc1..0243cfa 100644
+index 4ea2dc1..a1623d4 100644
 --- a/node_modules/@shopify/hydrogen/dist/development/index.js
 +++ b/node_modules/@shopify/hydrogen/dist/development/index.js
 @@ -230,8 +230,10 @@ function useApisLoaded({
@@ -48,3 +48,35 @@ index 4ea2dc1..0243cfa 100644
        shopifyAnalyticsReady();
        onReady();
      }
+@@ -781,6 +793,7 @@ function subscribe(event, callback) {
+ }
+ var waitForReadyQueue = /* @__PURE__ */ new Map();
+ function publish(event, payload) {
++  console.log('publish: areRegistersReady()?', areRegistersReady());
+   if (!areRegistersReady()) {
+     waitForReadyQueue.set(event, payload);
+     return;
+@@ -790,6 +803,7 @@ function publish(event, payload) {
+ function publishEvent(event, payload) {
+   (subscribers.get(event) ?? /* @__PURE__ */ new Map()).forEach((callback, subscriber) => {
+     try {
++      console.log(`publishEvent: ${event} to ${subscriber}`);
+       callback(payload);
+     } catch (error) {
+       if (typeof error === "object" && error instanceof Error) {
+@@ -811,6 +825,7 @@ function register(key) {
+   }
+   return {
+     ready: () => {
++      console.log(`register: ${key} is ready`);
+       registers[key] = true;
+       if (areRegistersReady() && waitForReadyQueue.size > 0) {
+         waitForReadyQueue.forEach((queuePayload, queueEvent) => {
+@@ -842,6 +857,7 @@ function AnalyticsProvider({
+ }) {
+   const listenerSet = useRef(false);
+   const { shop } = useShopAnalytics(shopProp);
++  console.log('AnalyticsProvider: shop', shop);
+   const [analyticsLoaded, setAnalyticsLoaded] = useState(
+     customCanTrack ? true : false
+   );
