@@ -1,5 +1,5 @@
 diff --git a/node_modules/@shopify/hydrogen/dist/development/index.js b/node_modules/@shopify/hydrogen/dist/development/index.js
-index 4ea2dc1..4b6138d 100644
+index 4ea2dc1..9d9b85a 100644
 --- a/node_modules/@shopify/hydrogen/dist/development/index.js
 +++ b/node_modules/@shopify/hydrogen/dist/development/index.js
 @@ -29,7 +29,11 @@ function AnalyticsView(props) {
@@ -251,7 +251,7 @@ index 4ea2dc1..4b6138d 100644
    );
    if (!!shop) {
      if (/\/68817551382$/.test(shop.shopId)) {
-@@ -880,34 +925,49 @@ function AnalyticsProvider({
+@@ -880,34 +925,52 @@ function AnalyticsProvider({
        }
      }
    }
@@ -285,6 +285,11 @@ index 4ea2dc1..4b6138d 100644
 +    }
 +  }
 +
++  console.log('canTrack()', canTrack())
++  const publish = canTrack() ? publish : () => {
++    console.log('AnalyticsProvider: publish is no-op because canTrack is', canTrack());
++  }
++
 +  const value = {
      canTrack,
 -    carts,
@@ -294,9 +299,7 @@ index 4ea2dc1..4b6138d 100644
 -    subscribe,
 +    ...carts,
      customData,
-+    publish: canTrack() ? publish : () => {
-+      console.log('AnalyticsProvider: publish is no-op because canTrack is', canTrack());
-+    },
++    publish,
      shop,
 +    subscribe,
      register,
@@ -325,11 +328,21 @@ index 4ea2dc1..4b6138d 100644
    return /* @__PURE__ */ jsxs(AnalyticsContext.Provider, { value, children: [
      children,
      !!shop && /* @__PURE__ */ jsx(AnalyticsPageView, {}),
-@@ -918,6 +978,7 @@ function AnalyticsProvider({
+@@ -918,9 +981,16 @@ function AnalyticsProvider({
          consent,
          onReady: () => {
            listenerSet.current = true;
 +          console.log('ShopifyAnalytics:onReady shopifyCanTrack', typeof shopifyCanTrack, shopifyCanTrack());
            setAnalyticsLoaded(true);
            setCanTrack(
-             customCanTrack ? () => customCanTrack : () => shopifyCanTrack
+-            customCanTrack ? () => customCanTrack : () => shopifyCanTrack
++            customCanTrack ? () => customCanTrack : () => function   () {
++              try {
++                return window.Shopify.customerPrivacy.analyticsProcessingAllowed();
++              } catch (e) {
++              }
++              return false;
++            }
+           );
+         },
+         domain: cookieDomain
