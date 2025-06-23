@@ -1,8 +1,21 @@
 diff --git a/node_modules/@shopify/hydrogen/dist/development/index.js b/node_modules/@shopify/hydrogen/dist/development/index.js
-index 4ea2dc1..a1623d4 100644
+index 4ea2dc1..e9d0e5a 100644
 --- a/node_modules/@shopify/hydrogen/dist/development/index.js
 +++ b/node_modules/@shopify/hydrogen/dist/development/index.js
-@@ -230,8 +230,10 @@ function useApisLoaded({
+@@ -29,7 +29,11 @@ function AnalyticsView(props) {
+     shop
+   };
+   useEffect(() => {
+-    if (!shop?.shopId) return;
++    console.log("[h2:debug:AnalyticsView] - Publishing view event", type, viewPayload2);
++    if (!shop?.shopId) {
++      console.error('[h2:error:AnalyticsView] - shopId is required for analytics events. Make sure to pass the shop prop to <Analytics.Provider> or use <Analytics.Provider shop={shop}>.');
++      return;
++    }
+     viewPayload2 = {
+       ...viewPayload2,
+       url: window.location.href
+@@ -230,8 +234,10 @@ function useApisLoaded({
    const setLoaded = {
      customerPrivacy: () => {
        if (withPrivacyBanner) {
@@ -13,7 +26,7 @@ index 4ea2dc1..a1623d4 100644
          setApisLoaded(() => [true]);
        }
      },
-@@ -239,6 +241,7 @@ function useApisLoaded({
+@@ -239,6 +245,7 @@ function useApisLoaded({
        if (!withPrivacyBanner) {
          return;
        }
@@ -21,7 +34,7 @@ index 4ea2dc1..a1623d4 100644
        setApisLoaded((prev) => [prev[0], true]);
      }
    };
-@@ -346,8 +349,14 @@ function ShopifyAnalytics({
+@@ -346,8 +353,14 @@ function ShopifyAnalytics({
      locale: language,
      checkoutDomain: !checkoutDomain ? "mock.shop" : checkoutDomain,
      storefrontAccessToken: !storefrontAccessToken ? "abcdefghijklmnopqrstuvwxyz123456" : storefrontAccessToken,
@@ -38,17 +51,39 @@ index 4ea2dc1..a1623d4 100644
    });
    useShopifyCookies({
      hasUserConsent: privacyReady ? canTrack() : true,
-@@ -367,6 +376,9 @@ function ShopifyAnalytics({
+@@ -357,18 +370,23 @@ function ShopifyAnalytics({
+   });
+   useEffect(() => {
+     if (init.current) return;
++
+     init.current = true;
+     subscribe2(AnalyticsEvent.PAGE_VIEWED, pageViewHandler);
+     subscribe2(AnalyticsEvent.PRODUCT_VIEWED, productViewHandler);
+     subscribe2(AnalyticsEvent.COLLECTION_VIEWED, collectionViewHandler);
+     subscribe2(AnalyticsEvent.SEARCH_VIEWED, searchViewHandler);
+     subscribe2(AnalyticsEvent.PRODUCT_ADD_TO_CART, productAddedToCartHandler);
++    console.log('ShopifyAnalytics: Subscribed to analytics events, initialized');
+     setShopifyReady(true);
    }, [subscribe2]);
    useEffect(() => {
      if (shopifyReady && privacyReady) {
+       shopifyAnalyticsReady();
+       onReady();
 +      console.log(
 +        'ShopifyAnalytics: Shopify Analytics API loaded'
 +      )
-       shopifyAnalyticsReady();
-       onReady();
      }
-@@ -781,6 +793,7 @@ function subscribe(event, callback) {
+   }, [shopifyReady, privacyReady, onReady]);
+   return null;
+@@ -716,6 +734,7 @@ function PerfKit({ shop }) {
+     if (scriptStatus !== "done" || loadedEvent.current) return;
+     loadedEvent.current = true;
+     subscribe2(AnalyticsEvent.PAGE_VIEWED, () => {
++      console.log("[h2:debug:PerfKit] - Page viewed event received, navigating PerfKit");
+       window.PerfKit?.navigate();
+     });
+     subscribe2(AnalyticsEvent.PRODUCT_VIEWED, () => {
+@@ -781,6 +800,7 @@ function subscribe(event, callback) {
  }
  var waitForReadyQueue = /* @__PURE__ */ new Map();
  function publish(event, payload) {
@@ -56,7 +91,7 @@ index 4ea2dc1..a1623d4 100644
    if (!areRegistersReady()) {
      waitForReadyQueue.set(event, payload);
      return;
-@@ -790,6 +803,7 @@ function publish(event, payload) {
+@@ -790,6 +810,7 @@ function publish(event, payload) {
  function publishEvent(event, payload) {
    (subscribers.get(event) ?? /* @__PURE__ */ new Map()).forEach((callback, subscriber) => {
      try {
@@ -64,7 +99,7 @@ index 4ea2dc1..a1623d4 100644
        callback(payload);
      } catch (error) {
        if (typeof error === "object" && error instanceof Error) {
-@@ -811,6 +825,7 @@ function register(key) {
+@@ -811,6 +832,7 @@ function register(key) {
    }
    return {
      ready: () => {
@@ -72,7 +107,7 @@ index 4ea2dc1..a1623d4 100644
        registers[key] = true;
        if (areRegistersReady() && waitForReadyQueue.size > 0) {
          waitForReadyQueue.forEach((queuePayload, queueEvent) => {
-@@ -842,6 +857,7 @@ function AnalyticsProvider({
+@@ -842,6 +864,7 @@ function AnalyticsProvider({
  }) {
    const listenerSet = useRef(false);
    const { shop } = useShopAnalytics(shopProp);
@@ -80,3 +115,19 @@ index 4ea2dc1..a1623d4 100644
    const [analyticsLoaded, setAnalyticsLoaded] = useState(
      customCanTrack ? true : false
    );
+@@ -908,6 +931,7 @@ function AnalyticsProvider({
+     getCustomerPrivacy,
+     getPrivacyBanner
+   ]);
++  console.log('AnalyticsProvider: cookieDomain', cookieDomain);
+   return /* @__PURE__ */ jsxs(AnalyticsContext.Provider, { value, children: [
+     children,
+     !!shop && /* @__PURE__ */ jsx(AnalyticsPageView, {}),
+@@ -919,6 +943,7 @@ function AnalyticsProvider({
+         onReady: () => {
+           listenerSet.current = true;
+           setAnalyticsLoaded(true);
++          const canTrack = customCanTrack || shopifyCanTrack();
+           setCanTrack(
+             customCanTrack ? () => customCanTrack : () => shopifyCanTrack
+           );
