@@ -290,7 +290,7 @@ function DesktopHeader({
           ))}
           <Link
             key={'static'}
-            to={'/static'}
+            to={'/static?delay=3000'}
             prefetch="intent"
             className={({isActive}) =>
               isActive ? 'pb-1 border-b -mb-px' : 'pb-1'
