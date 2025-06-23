@@ -1,5 +1,5 @@
 diff --git a/node_modules/@shopify/hydrogen/dist/development/index.js b/node_modules/@shopify/hydrogen/dist/development/index.js
-index 4ea2dc1..d9e6517 100644
+index 4ea2dc1..95d3ff4 100644
 --- a/node_modules/@shopify/hydrogen/dist/development/index.js
 +++ b/node_modules/@shopify/hydrogen/dist/development/index.js
 @@ -29,7 +29,11 @@ function AnalyticsView(props) {
@@ -107,7 +107,23 @@ index 4ea2dc1..d9e6517 100644
        registers[key] = true;
        if (areRegistersReady() && waitForReadyQueue.size > 0) {
          waitForReadyQueue.forEach((queuePayload, queueEvent) => {
-@@ -886,6 +908,7 @@ function AnalyticsProvider({
+@@ -847,7 +869,14 @@ function AnalyticsProvider({
+   );
+   const [carts, setCarts] = useState({ cart: null, prevCart: null });
+   const [canTrack, setCanTrack] = useState(
+-    customCanTrack ? () => customCanTrack : () => shopifyCanTrack
++    customCanTrack ? () => customCanTrack : () => function shopifyCanTrack() {
++      try {
++        return window.Shopify.customerPrivacy.analyticsProcessingAllowed();
++      } catch (e) {
++        console.error('[h2:error:Analytics.Provider:shopifyCanTrack] - Shopify Customer Privacy API not available. Make sure to load the Shopify Customer Privacy API with useCustomerPrivacy() or <AnalyticsProvider>.', e);
++      }
++      return false;
++    }
+   );
+   if (!!shop) {
+     if (/\/68817551382$/.test(shop.shopId)) {
+@@ -886,6 +915,7 @@ function AnalyticsProvider({
        ...carts,
        customData,
        publish: canTrack() ? publish : () => {
@@ -115,11 +131,11 @@ index 4ea2dc1..d9e6517 100644
        },
        shop,
        subscribe,
-@@ -919,6 +942,7 @@ function AnalyticsProvider({
+@@ -917,6 +947,7 @@ function AnalyticsProvider({
+       {
+         consent,
          onReady: () => {
++          console.log('ShopifyAnalytics: shopifyCanTrack', typeof shopifyCanTrack, shopifyCanTrack());
            listenerSet.current = true;
            setAnalyticsLoaded(true);
-+          const canTrack = customCanTrack || shopifyCanTrack();
            setCanTrack(
-             customCanTrack ? () => customCanTrack : () => shopifyCanTrack
-           );
