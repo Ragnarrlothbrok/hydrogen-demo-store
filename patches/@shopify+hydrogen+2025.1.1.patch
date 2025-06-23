@@ -1,5 +1,5 @@
 diff --git a/node_modules/@shopify/hydrogen/dist/development/index.js b/node_modules/@shopify/hydrogen/dist/development/index.js
-index 4ea2dc1..2886b4a 100644
+index 4ea2dc1..0fb2186 100644
 --- a/node_modules/@shopify/hydrogen/dist/development/index.js
 +++ b/node_modules/@shopify/hydrogen/dist/development/index.js
 @@ -29,7 +29,11 @@ function AnalyticsView(props) {
@@ -15,7 +15,81 @@ index 4ea2dc1..2886b4a 100644
      viewPayload2 = {
        ...viewPayload2,
        url: window.location.href
-@@ -230,8 +234,10 @@ function useApisLoaded({
+@@ -95,6 +99,14 @@ function useCustomerPrivacy(props) {
+     withPrivacyBanner,
+     onLoaded: onReady
+   });
++  function emitCustomerPrivacyApiLoaded() {
++    if (hasEmitted) return;
++    hasEmitted = true;
++    const event = new CustomEvent("shopifyCustomerPrivacyApiLoaded");
++    console.log('[debug:useCustomerPrivacy] - Emitting shopifyCustomerPrivacyApiLoaded event');
++    document.dispatchEvent(event);
++  }
++
+   const config = useMemo(() => {
+     const { checkoutDomain, storefrontAccessToken } = consentConfig;
+     if (!checkoutDomain) logMissingConfig("checkoutDomain");
+@@ -183,26 +195,27 @@ function useCustomerPrivacy(props) {
+                 customCustomerPrivacy = {
+                   ...customerPrivacy,
+                   setTrackingConsent: overrideCustomerPrivacySetTrackingConsent(
+-                    { customerPrivacy, config }
+-                  )
+-                };
+-                customShopify = {
+-                  ...customShopify,
+-                  customerPrivacy: customCustomerPrivacy
+-                };
+-                setLoaded.customerPrivacy();
+-                emitCustomerPrivacyApiLoaded();
+-              }
++                  { customerPrivacy, config }
++                )
++              };
++              customShopify = {
++                ...customShopify,
++                customerPrivacy: customCustomerPrivacy
++              };
++              setLoaded.customerPrivacy();
++              emitCustomerPrivacyApiLoaded();
+             }
+-          });
+-        }
++          }
++        });
+       }
+-    });
+-  }, [
+-    config,
+-    overrideCustomerPrivacySetTrackingConsent,
+-    setLoaded.customerPrivacy
+-  ]);
++    }
++  });
++}, [
++  config,
++  overrideCustomerPrivacySetTrackingConsent,
++  setLoaded.customerPrivacy,
++  shopifyCustomerPrivacyApiLoaded
++]);
+   const result = {
+     customerPrivacy: getCustomerPrivacy()
+   };
+@@ -212,12 +225,6 @@ function useCustomerPrivacy(props) {
+   return result;
+ }
+ var hasEmitted = false;
+-function emitCustomerPrivacyApiLoaded() {
+-  if (hasEmitted) return;
+-  hasEmitted = true;
+-  const event = new CustomEvent("shopifyCustomerPrivacyApiLoaded");
+-  document.dispatchEvent(event);
+-}
+ function useApisLoaded({
+   withPrivacyBanner,
+   onLoaded
+@@ -230,8 +237,10 @@ function useApisLoaded({
    const setLoaded = {
      customerPrivacy: () => {
        if (withPrivacyBanner) {
@@ -26,7 +100,7 @@ index 4ea2dc1..2886b4a 100644
          setApisLoaded(() => [true]);
        }
      },
-@@ -239,6 +245,7 @@ function useApisLoaded({
+@@ -239,6 +248,7 @@ function useApisLoaded({
        if (!withPrivacyBanner) {
          return;
        }
@@ -34,7 +108,7 @@ index 4ea2dc1..2886b4a 100644
        setApisLoaded((prev) => [prev[0], true]);
      }
    };
-@@ -346,8 +353,14 @@ function ShopifyAnalytics({
+@@ -346,8 +356,14 @@ function ShopifyAnalytics({
      locale: language,
      checkoutDomain: !checkoutDomain ? "mock.shop" : checkoutDomain,
      storefrontAccessToken: !storefrontAccessToken ? "abcdefghijklmnopqrstuvwxyz123456" : storefrontAccessToken,
@@ -51,7 +125,7 @@ index 4ea2dc1..2886b4a 100644
    });
    useShopifyCookies({
      hasUserConsent: privacyReady ? canTrack() : true,
-@@ -357,18 +370,23 @@ function ShopifyAnalytics({
+@@ -357,18 +373,23 @@ function ShopifyAnalytics({
    });
    useEffect(() => {
      if (init.current) return;
@@ -75,7 +149,7 @@ index 4ea2dc1..2886b4a 100644
      }
    }, [shopifyReady, privacyReady, onReady]);
    return null;
-@@ -716,6 +734,7 @@ function PerfKit({ shop }) {
+@@ -716,6 +737,7 @@ function PerfKit({ shop }) {
      if (scriptStatus !== "done" || loadedEvent.current) return;
      loadedEvent.current = true;
      subscribe2(AnalyticsEvent.PAGE_VIEWED, () => {
@@ -83,7 +157,7 @@ index 4ea2dc1..2886b4a 100644
        window.PerfKit?.navigate();
      });
      subscribe2(AnalyticsEvent.PRODUCT_VIEWED, () => {
-@@ -781,6 +800,7 @@ function subscribe(event, callback) {
+@@ -781,6 +803,7 @@ function subscribe(event, callback) {
  }
  var waitForReadyQueue = /* @__PURE__ */ new Map();
  function publish(event, payload) {
@@ -91,7 +165,7 @@ index 4ea2dc1..2886b4a 100644
    if (!areRegistersReady()) {
      waitForReadyQueue.set(event, payload);
      return;
-@@ -790,6 +810,7 @@ function publish(event, payload) {
+@@ -790,6 +813,7 @@ function publish(event, payload) {
  function publishEvent(event, payload) {
    (subscribers.get(event) ?? /* @__PURE__ */ new Map()).forEach((callback, subscriber) => {
      try {
@@ -99,7 +173,7 @@ index 4ea2dc1..2886b4a 100644
        callback(payload);
      } catch (error) {
        if (typeof error === "object" && error instanceof Error) {
-@@ -811,6 +832,7 @@ function register(key) {
+@@ -811,6 +835,7 @@ function register(key) {
    }
    return {
      ready: () => {
@@ -107,7 +181,7 @@ index 4ea2dc1..2886b4a 100644
        registers[key] = true;
        if (areRegistersReady() && waitForReadyQueue.size > 0) {
          waitForReadyQueue.forEach((queuePayload, queueEvent) => {
-@@ -847,7 +869,14 @@ function AnalyticsProvider({
+@@ -847,7 +872,14 @@ function AnalyticsProvider({
    );
    const [carts, setCarts] = useState({ cart: null, prevCart: null });
    const [canTrack, setCanTrack] = useState(
@@ -123,7 +197,7 @@ index 4ea2dc1..2886b4a 100644
    );
    if (!!shop) {
      if (/\/68817551382$/.test(shop.shopId)) {
-@@ -886,6 +915,7 @@ function AnalyticsProvider({
+@@ -886,6 +918,7 @@ function AnalyticsProvider({
        ...carts,
        customData,
        publish: canTrack() ? publish : () => {
@@ -131,7 +205,7 @@ index 4ea2dc1..2886b4a 100644
        },
        shop,
        subscribe,
-@@ -896,6 +926,7 @@ function AnalyticsProvider({
+@@ -896,6 +929,7 @@ function AnalyticsProvider({
    }, [
      analyticsLoaded,
      canTrack,
@@ -139,25 +213,24 @@ index 4ea2dc1..2886b4a 100644
      carts,
      carts.cart?.updatedAt,
      carts.prevCart,
-@@ -908,6 +939,17 @@ function AnalyticsProvider({
+@@ -908,6 +942,16 @@ function AnalyticsProvider({
      getCustomerPrivacy,
      getPrivacyBanner
    ]);
 +    // listen to shopifyCustomerPrivacyApiLoaded custom event
 +  useEffect(() => {
-+    window.addEventListener('shopifyCustomerPrivacyApiLoaded', () => {
-+      console.log('--> privacy api loaded event');
-+    });
++    function shopifyCustomerPrivacyApiLoaded(event) {
++      console.log('--> privacy api loaded event', event);
++    }
++    window.addEventListener('shopifyCustomerPrivacyApiLoaded', shopifyCustomerPrivacyApiLoaded);
 +    return () => {
-+      window.removeEventListener('shopifyCustomerPrivacyApiLoaded', () => {
-+        console.log('--> privacy api loaded event removed');
-+      });
++      window.removeEventListener('shopifyCustomerPrivacyApiLoaded', shopifyCustomerPrivacyApiLoaded);
 +    };
 +  }, []);
    return /* @__PURE__ */ jsxs(AnalyticsContext.Provider, { value, children: [
      children,
      !!shop && /* @__PURE__ */ jsx(AnalyticsPageView, {}),
-@@ -918,7 +960,10 @@ function AnalyticsProvider({
+@@ -918,7 +962,10 @@ function AnalyticsProvider({
          consent,
          onReady: () => {
            listenerSet.current = true;
