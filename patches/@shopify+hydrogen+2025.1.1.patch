@@ -1,5 +1,5 @@
 diff --git a/node_modules/@shopify/hydrogen/dist/development/index.js b/node_modules/@shopify/hydrogen/dist/development/index.js
-index 4ea2dc1..978ae85 100644
+index 4ea2dc1..0700bb4 100644
 --- a/node_modules/@shopify/hydrogen/dist/development/index.js
 +++ b/node_modules/@shopify/hydrogen/dist/development/index.js
 @@ -29,7 +29,11 @@ function AnalyticsView(props) {
@@ -251,7 +251,7 @@ index 4ea2dc1..978ae85 100644
    );
    if (!!shop) {
      if (/\/68817551382$/.test(shop.shopId)) {
-@@ -880,34 +925,34 @@ function AnalyticsProvider({
+@@ -880,34 +925,49 @@ function AnalyticsProvider({
        }
      }
    }
@@ -270,6 +270,21 @@ index 4ea2dc1..978ae85 100644
 -    };
 -  }, [
 -    analyticsLoaded,
++  function getCustomerPrivacy() {
++    try {
++      return window.Shopify && window.Shopify.customerPrivacy ? window.Shopify?.customerPrivacy : null;
++    } catch (e) {
++      return null;
++    }
++  }
++  function getPrivacyBanner() {
++    try {
++      return window && window?.privacyBanner ? window.privacyBanner : null;
++    } catch (e) {
++      return null;
++    }
++  }
++
 +  const value = {
      canTrack,
 -    carts,
@@ -310,15 +325,11 @@ index 4ea2dc1..978ae85 100644
    return /* @__PURE__ */ jsxs(AnalyticsContext.Provider, { value, children: [
      children,
      !!shop && /* @__PURE__ */ jsx(AnalyticsPageView, {}),
-@@ -918,7 +963,10 @@ function AnalyticsProvider({
+@@ -918,6 +978,7 @@ function AnalyticsProvider({
          consent,
          onReady: () => {
            listenerSet.current = true;
--          setAnalyticsLoaded(true);
-+          setTimeout(() => {
-+            console.log('ShopifyAnalytics:onReady shopifyCanTrack', typeof shopifyCanTrack, shopifyCanTrack());
-+            setAnalyticsLoaded(true);
-+          }, 50)
++          console.log('ShopifyAnalytics:onReady shopifyCanTrack', typeof shopifyCanTrack, shopifyCanTrack());
+           setAnalyticsLoaded(true);
            setCanTrack(
              customCanTrack ? () => customCanTrack : () => shopifyCanTrack
-           );
