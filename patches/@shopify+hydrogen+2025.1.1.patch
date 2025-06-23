@@ -1,5 +1,5 @@
 diff --git a/node_modules/@shopify/hydrogen/dist/development/index.js b/node_modules/@shopify/hydrogen/dist/development/index.js
-index 4ea2dc1..f58e3e7 100644
+index 4ea2dc1..2db6df8 100644
 --- a/node_modules/@shopify/hydrogen/dist/development/index.js
 +++ b/node_modules/@shopify/hydrogen/dist/development/index.js
 @@ -29,7 +29,11 @@ function AnalyticsView(props) {
@@ -235,7 +235,7 @@ index 4ea2dc1..f58e3e7 100644
        registers[key] = true;
        if (areRegistersReady() && waitForReadyQueue.size > 0) {
          waitForReadyQueue.forEach((queuePayload, queueEvent) => {
-@@ -847,7 +885,14 @@ function AnalyticsProvider({
+@@ -847,8 +885,16 @@ function AnalyticsProvider({
    );
    const [carts, setCarts] = useState({ cart: null, prevCart: null });
    const [canTrack, setCanTrack] = useState(
@@ -249,9 +249,11 @@ index 4ea2dc1..f58e3e7 100644
 +      return false;
 +    }
    );
++
    if (!!shop) {
      if (/\/68817551382$/.test(shop.shopId)) {
-@@ -880,34 +925,56 @@ function AnalyticsProvider({
+       warnOnce(
+@@ -880,34 +926,71 @@ function AnalyticsProvider({
        }
      }
    }
@@ -272,9 +274,11 @@ index 4ea2dc1..f58e3e7 100644
 +    }
 +  }
 +
-+  const p = canTrack() ? publish : () => {
-+    console.log('AnalyticsProvider: publish is no-op because canTrack is', canTrack());
-+  }
++  const p = canTrack()
++    ? publish
++    : () => {
++        console.log('AnalyticsProvider: publish is no-op because canTrack is false')
++      }
 +
    const value = useMemo(() => {
      return {
@@ -306,8 +310,21 @@ index 4ea2dc1..f58e3e7 100644
 -    getPrivacyBanner
 -  ]);
 +    },
-+    [canTrack, carts, customData, p, shop, getCustomerPrivacy, getPrivacyBanner, register, subscribe, getCustomerPrivacy, getPrivacyBanner];
++    [
++        canTrack,
++        carts,
++        customData,
++        p,
++        shop,
++        getCustomerPrivacy,
++        getPrivacyBanner,
++        register,
++        subscribe,
++        getCustomerPrivacy,
++        getPrivacyBanner
++    ];
 +  })
++
 +  console.log('-------------------------')
 +  console.log(JSON.stringify(value))
 +  console.log('-------------------------')
@@ -326,7 +343,7 @@ index 4ea2dc1..f58e3e7 100644
    return /* @__PURE__ */ jsxs(AnalyticsContext.Provider, { value, children: [
      children,
      !!shop && /* @__PURE__ */ jsx(AnalyticsPageView, {}),
-@@ -918,9 +985,16 @@ function AnalyticsProvider({
+@@ -918,9 +1001,16 @@ function AnalyticsProvider({
          consent,
          onReady: () => {
            listenerSet.current = true;
@@ -334,7 +351,7 @@ index 4ea2dc1..f58e3e7 100644
            setAnalyticsLoaded(true);
            setCanTrack(
 -            customCanTrack ? () => customCanTrack : () => shopifyCanTrack
-+            customCanTrack ? () => customCanTrack : () => function   () {
++            customCanTrack ? () => customCanTrack : () => function canTrack() {
 +              try {
 +                return window.Shopify.customerPrivacy.analyticsProcessingAllowed();
 +              } catch (e) {
@@ -344,3 +361,11 @@ index 4ea2dc1..f58e3e7 100644
            );
          },
          domain: cookieDomain
+@@ -929,6 +1019,7 @@ function AnalyticsProvider({
+     !!shop && /* @__PURE__ */ jsx(PerfKit, { shop })
+   ] });
+ }
++
+ function useAnalytics() {
+   const analyticsContext = useContext(AnalyticsContext);
+   if (!analyticsContext) {
