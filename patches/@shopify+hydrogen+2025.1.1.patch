@@ -1,5 +1,5 @@
 diff --git a/node_modules/@shopify/hydrogen/dist/development/index.js b/node_modules/@shopify/hydrogen/dist/development/index.js
-index 4ea2dc1..83cffdc 100644
+index 4ea2dc1..7196126 100644
 --- a/node_modules/@shopify/hydrogen/dist/development/index.js
 +++ b/node_modules/@shopify/hydrogen/dist/development/index.js
 @@ -29,7 +29,11 @@ function AnalyticsView(props) {
@@ -251,25 +251,11 @@ index 4ea2dc1..83cffdc 100644
    );
    if (!!shop) {
      if (/\/68817551382$/.test(shop.shopId)) {
-@@ -880,34 +925,52 @@ function AnalyticsProvider({
+@@ -880,34 +925,56 @@ function AnalyticsProvider({
        }
      }
    }
--  const value = useMemo(() => {
--    return {
--      canTrack,
--      ...carts,
--      customData,
--      publish: canTrack() ? publish : () => {
--      },
--      shop,
--      subscribe,
--      register,
--      customerPrivacy: getCustomerPrivacy(),
--      privacyBanner: getPrivacyBanner()
--    };
--  }, [
--    analyticsLoaded,
++
 +  function getCustomerPrivacy() {
 +    try {
 +      return window.Shopify && window.Shopify.customerPrivacy ? window.Shopify?.customerPrivacy : null;
@@ -290,26 +276,38 @@ index 4ea2dc1..83cffdc 100644
 +    console.log('AnalyticsProvider: publish is no-op because canTrack is', canTrack());
 +  }
 +
-+  const value = {
-     canTrack,
+   const value = useMemo(() => {
+     return {
+       canTrack,
+       ...carts,
+       customData,
+-      publish: canTrack() ? publish : () => {
+-      },
++      publish: p,
+       shop,
+       subscribe,
+       register,
+       customerPrivacy: getCustomerPrivacy(),
+       privacyBanner: getPrivacyBanner()
+-    };
+-  }, [
+-    analyticsLoaded,
+-    canTrack,
 -    carts,
 -    carts.cart?.updatedAt,
 -    carts.prevCart,
 -    publish,
 -    subscribe,
-+    ...carts,
-     customData,
-+    publish: p,
-     shop,
-+    subscribe,
-     register,
+-    customData,
+-    shop,
+-    register,
 -    JSON.stringify(registers),
 -    getCustomerPrivacy,
 -    getPrivacyBanner
 -  ]);
-+    customerPrivacy: getCustomerPrivacy(),
-+    privacyBanner: getPrivacyBanner()
-+  }
++    },
++    [canTrack, carts, customData, p, shop, getCustomerPrivacy, getPrivacyBanner]
++  })
 +  console.log('-------------------------')
 +  console.log(JSON.stringify(value))
 +  console.log('-------------------------')
@@ -328,7 +326,7 @@ index 4ea2dc1..83cffdc 100644
    return /* @__PURE__ */ jsxs(AnalyticsContext.Provider, { value, children: [
      children,
      !!shop && /* @__PURE__ */ jsx(AnalyticsPageView, {}),
-@@ -918,9 +981,16 @@ function AnalyticsProvider({
+@@ -918,9 +985,16 @@ function AnalyticsProvider({
          consent,
          onReady: () => {
            listenerSet.current = true;
