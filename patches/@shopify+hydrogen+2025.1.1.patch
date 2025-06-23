@@ -1,5 +1,5 @@
 diff --git a/node_modules/@shopify/hydrogen/dist/development/index.js b/node_modules/@shopify/hydrogen/dist/development/index.js
-index 4ea2dc1..e9d0e5a 100644
+index 4ea2dc1..d9e6517 100644
 --- a/node_modules/@shopify/hydrogen/dist/development/index.js
 +++ b/node_modules/@shopify/hydrogen/dist/development/index.js
 @@ -29,7 +29,11 @@ function AnalyticsView(props) {
@@ -107,23 +107,15 @@ index 4ea2dc1..e9d0e5a 100644
        registers[key] = true;
        if (areRegistersReady() && waitForReadyQueue.size > 0) {
          waitForReadyQueue.forEach((queuePayload, queueEvent) => {
-@@ -842,6 +864,7 @@ function AnalyticsProvider({
- }) {
-   const listenerSet = useRef(false);
-   const { shop } = useShopAnalytics(shopProp);
-+  console.log('AnalyticsProvider: shop', shop);
-   const [analyticsLoaded, setAnalyticsLoaded] = useState(
-     customCanTrack ? true : false
-   );
-@@ -908,6 +931,7 @@ function AnalyticsProvider({
-     getCustomerPrivacy,
-     getPrivacyBanner
-   ]);
-+  console.log('AnalyticsProvider: cookieDomain', cookieDomain);
-   return /* @__PURE__ */ jsxs(AnalyticsContext.Provider, { value, children: [
-     children,
-     !!shop && /* @__PURE__ */ jsx(AnalyticsPageView, {}),
-@@ -919,6 +943,7 @@ function AnalyticsProvider({
+@@ -886,6 +908,7 @@ function AnalyticsProvider({
+       ...carts,
+       customData,
+       publish: canTrack() ? publish : () => {
++        console.log('AnalyticsProvider: publish is no-op because canTrack is', canTrack());
+       },
+       shop,
+       subscribe,
+@@ -919,6 +942,7 @@ function AnalyticsProvider({
          onReady: () => {
            listenerSet.current = true;
            setAnalyticsLoaded(true);
