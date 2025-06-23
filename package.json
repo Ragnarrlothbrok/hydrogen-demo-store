@@ -6,8 +6,8 @@
   "type": "module",
   "scripts": {
     "dev": "NODE_ENV=development shopify hydrogen dev --codegen",
-    "build": "shopify hydrogen build --codegen",
-    "preview": "npm run build && shopify hydrogen preview",
+    "build": "NODE_ENV=development shopify hydrogen build --codegen",
+    "preview": "NODE_ENV=development npm run build && shopify hydrogen preview",
     "e2e": "npx playwright test",
     "e2e:ui": "npx playwright test --ui",
     "lint": "eslint --no-error-on-unmatched-pattern --ext .js,.ts,.jsx,.tsx .",
