@@ -30,10 +30,6 @@ export default defineConfig(({mode}) => {
             './node_modules/@shopify/hydrogen/dist/development/index.js',
         },
       ],
-      conditions:
-        mode === 'production'
-          ? ['development', 'module', 'import', 'default'] // Force development even in prod
-          : ['development', 'module', 'import', 'default'],
     },
     ssr: {
       optimizeDeps: {
