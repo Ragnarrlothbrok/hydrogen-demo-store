@@ -1,5 +1,5 @@
 diff --git a/node_modules/@shopify/hydrogen/dist/development/index.js b/node_modules/@shopify/hydrogen/dist/development/index.js
-index 4ea2dc1..c7eea18 100644
+index 4ea2dc1..83cffdc 100644
 --- a/node_modules/@shopify/hydrogen/dist/development/index.js
 +++ b/node_modules/@shopify/hydrogen/dist/development/index.js
 @@ -29,7 +29,11 @@ function AnalyticsView(props) {
@@ -251,7 +251,7 @@ index 4ea2dc1..c7eea18 100644
    );
    if (!!shop) {
      if (/\/68817551382$/.test(shop.shopId)) {
-@@ -880,34 +925,54 @@ function AnalyticsProvider({
+@@ -880,34 +925,52 @@ function AnalyticsProvider({
        }
      }
    }
@@ -285,8 +285,6 @@ index 4ea2dc1..c7eea18 100644
 +      return null;
 +    }
 +  }
-+
-+  console.log('canTrack()', canTrack())
 +
 +  const p = canTrack() ? publish : () => {
 +    console.log('AnalyticsProvider: publish is no-op because canTrack is', canTrack());
@@ -330,7 +328,7 @@ index 4ea2dc1..c7eea18 100644
    return /* @__PURE__ */ jsxs(AnalyticsContext.Provider, { value, children: [
      children,
      !!shop && /* @__PURE__ */ jsx(AnalyticsPageView, {}),
-@@ -918,9 +983,16 @@ function AnalyticsProvider({
+@@ -918,9 +981,16 @@ function AnalyticsProvider({
          consent,
          onReady: () => {
            listenerSet.current = true;
