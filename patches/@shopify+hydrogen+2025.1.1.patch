@@ -1,5 +1,5 @@
 diff --git a/node_modules/@shopify/hydrogen/dist/development/index.js b/node_modules/@shopify/hydrogen/dist/development/index.js
-index 4ea2dc1..3d360ab 100644
+index 4ea2dc1..71a2759 100644
 --- a/node_modules/@shopify/hydrogen/dist/development/index.js
 +++ b/node_modules/@shopify/hydrogen/dist/development/index.js
 @@ -10,6 +10,7 @@ import cspBuilder from 'content-security-policy-builder';
@@ -45,7 +45,7 @@ index 4ea2dc1..3d360ab 100644
  function AnalyticsPageView(props) {
    return /* @__PURE__ */ jsx(AnalyticsView, { ...props, type: "page_viewed" });
  }
-@@ -72,29 +82,58 @@ var AnalyticsEvent = {
+@@ -72,29 +82,59 @@ var AnalyticsEvent = {
    // Custom
    CUSTOM_EVENT: `custom_`
  };
@@ -97,6 +97,7 @@ index 4ea2dc1..3d360ab 100644
 +  }
 +
 +  function emitPrivacyBannerApiLoaded() {
++    console.log('[debug:emitPrivacyBannerApiLoaded] - emitPrivacyBannerApiLoaded hasEmitted', hasEmitted);
 +    if (hasEmitted) return;
 +    hasEmitted = true;
 +    const event = new CustomEvent("emitPrivacyBannerApiLoaded", {bubbles: true, cancelable: true});
@@ -106,7 +107,7 @@ index 4ea2dc1..3d360ab 100644
    const config = useMemo(() => {
      const { checkoutDomain, storefrontAccessToken } = consentConfig;
      if (!checkoutDomain) logMissingConfig("checkoutDomain");
-@@ -107,12 +146,14 @@ function useCustomerPrivacy(props) {
+@@ -107,12 +147,14 @@ function useCustomerPrivacy(props) {
      const config2 = {
        checkoutRootDomain: checkoutDomain,
        storefrontAccessToken,
@@ -121,20 +122,19 @@ index 4ea2dc1..3d360ab 100644
    useEffect(() => {
      const consentCollectedHandler = (event) => {
        if (onVisitorConsentCollected) {
-@@ -130,6 +171,19 @@ function useCustomerPrivacy(props) {
+@@ -130,6 +172,18 @@ function useCustomerPrivacy(props) {
        );
      };
    }, [onVisitorConsentCollected]);
 +
 +  useEffect(() => {
 +    if (!withPrivacyBanner) return
-+    window.addEventListener('shopifyCustomerPrivacyApiLoaded', () => {
++    function loadBanner() {
 +      window.privacyBanner.loadBanner(config);
-+    })
++    }
++    document.addEventListener('shopifyCustomerPrivacyApiLoaded', loadBanner, { once: true });
 +    return () => {
-+      window.removeEventListener('shopifyCustomerPrivacyApiLoaded', () => {
-+      window.privacyBanner.loadBanner(config);
-+      })
++      document.removeEventListener('shopifyCustomerPrivacyApiLoaded', loadBanner);
 +    }
 +  }, [withPrivacyBanner, config]);
 +
