@@ -1,5 +1,5 @@
 diff --git a/node_modules/@shopify/hydrogen/dist/development/index.js b/node_modules/@shopify/hydrogen/dist/development/index.js
-index 4ea2dc1..f23713e 100644
+index 4ea2dc1..31b2674 100644
 --- a/node_modules/@shopify/hydrogen/dist/development/index.js
 +++ b/node_modules/@shopify/hydrogen/dist/development/index.js
 @@ -29,7 +29,11 @@ function AnalyticsView(props) {
@@ -221,7 +221,7 @@ index 4ea2dc1..f23713e 100644
    customerPrivacy: null,
    privacyBanner: null
  };
-@@ -776,12 +809,16 @@ function areRegistersReady() {
+@@ -776,20 +809,27 @@ function areRegistersReady() {
  function subscribe(event, callback) {
    if (!subscribers.has(event)) {
      subscribers.set(event, /* @__PURE__ */ new Map());
@@ -231,6 +231,7 @@ index 4ea2dc1..f23713e 100644
    subscribers.get(event)?.set(callback.toString(), callback);
  }
  var waitForReadyQueue = /* @__PURE__ */ new Map();
++
  function publish(event, payload) {
 +  console.log('publish: real areRegistersReady()?', areRegistersReady());
    if (!areRegistersReady()) {
@@ -238,7 +239,9 @@ index 4ea2dc1..f23713e 100644
      waitForReadyQueue.set(event, payload);
      return;
    }
-@@ -790,6 +827,7 @@ function publish(event, payload) {
+   publishEvent(event, payload);
+ }
++
  function publishEvent(event, payload) {
    (subscribers.get(event) ?? /* @__PURE__ */ new Map()).forEach((callback, subscriber) => {
      try {
@@ -246,7 +249,7 @@ index 4ea2dc1..f23713e 100644
        callback(payload);
      } catch (error) {
        if (typeof error === "object" && error instanceof Error) {
-@@ -800,7 +838,7 @@ function publishEvent(event, payload) {
+@@ -800,7 +840,7 @@ function publishEvent(event, payload) {
            error.stack
          );
        } else {
@@ -255,7 +258,7 @@ index 4ea2dc1..f23713e 100644
        }
      }
    });
-@@ -812,12 +850,17 @@ function register(key) {
+@@ -812,12 +852,17 @@ function register(key) {
    return {
      ready: () => {
        registers[key] = true;
@@ -273,7 +276,7 @@ index 4ea2dc1..f23713e 100644
      }
    };
  }
-@@ -847,8 +890,12 @@ function AnalyticsProvider({
+@@ -847,8 +892,12 @@ function AnalyticsProvider({
    );
    const [carts, setCarts] = useState({ cart: null, prevCart: null });
    const [canTrack, setCanTrack] = useState(
@@ -282,12 +285,12 @@ index 4ea2dc1..f23713e 100644
 +      ? () => customCanTrack
 +      : () => shopifyCanTrack
    );
-+  const [pub, setPub] = useState(canTrack() ? publish : () => { console.log('publish: no-op before canTrack')});
++  const [pub, setPub] = useState(canTrack() ? () => publish : () => { console.log('publish: no-op before canTrack')});
 +
    if (!!shop) {
      if (/\/68817551382$/.test(shop.shopId)) {
        warnOnce(
-@@ -880,34 +927,65 @@ function AnalyticsProvider({
+@@ -880,34 +929,65 @@ function AnalyticsProvider({
        }
      }
    }
@@ -371,7 +374,7 @@ index 4ea2dc1..f23713e 100644
    return /* @__PURE__ */ jsxs(AnalyticsContext.Provider, { value, children: [
      children,
      !!shop && /* @__PURE__ */ jsx(AnalyticsPageView, {}),
-@@ -918,10 +996,13 @@ function AnalyticsProvider({
+@@ -918,10 +998,13 @@ function AnalyticsProvider({
          consent,
          onReady: () => {
            listenerSet.current = true;
