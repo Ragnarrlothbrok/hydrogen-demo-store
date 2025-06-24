@@ -1,5 +1,5 @@
 diff --git a/node_modules/@shopify/hydrogen/dist/development/index.js b/node_modules/@shopify/hydrogen/dist/development/index.js
-index 4ea2dc1..b27c7c8 100644
+index 4ea2dc1..b650d26 100644
 --- a/node_modules/@shopify/hydrogen/dist/development/index.js
 +++ b/node_modules/@shopify/hydrogen/dist/development/index.js
 @@ -10,6 +10,7 @@ import cspBuilder from 'content-security-policy-builder';
@@ -122,15 +122,21 @@ index 4ea2dc1..b27c7c8 100644
    useEffect(() => {
      if (!withPrivacyBanner || observing.current.privacyBanner) return;
      observing.current.privacyBanner = true;
-@@ -142,6 +177,7 @@ function useCustomerPrivacy(props) {
+@@ -142,11 +177,9 @@ function useCustomerPrivacy(props) {
        set(value) {
          if (typeof value === "object" && value !== null && "showPreferences" in value && "loadBanner" in value) {
            const privacyBanner = value;
 +          console.log('loadBanner', config)
            privacyBanner.loadBanner(config);
-           customPrivacyBanner = overridePrivacyBannerMethods({
-             privacyBanner,
-@@ -157,9 +193,11 @@ function useCustomerPrivacy(props) {
+-          customPrivacyBanner = overridePrivacyBannerMethods({
+-            privacyBanner,
+-            config
+-          });
++          customPrivacyBanner = overridePrivacyBannerMethods({ privacyBanner, config });
+           setLoaded.privacyBanner();
+           emitCustomerPrivacyApiLoaded();
+         }
+@@ -157,9 +190,11 @@ function useCustomerPrivacy(props) {
      withPrivacyBanner,
      config,
      overridePrivacyBannerMethods,
@@ -143,7 +149,7 @@ index 4ea2dc1..b27c7c8 100644
      if (observing.current.customerPrivacy) return;
      observing.current.customerPrivacy = true;
      let customCustomerPrivacy = null;
-@@ -183,26 +221,28 @@ function useCustomerPrivacy(props) {
+@@ -183,26 +218,33 @@ function useCustomerPrivacy(props) {
                  customCustomerPrivacy = {
                    ...customerPrivacy,
                    setTrackingConsent: overrideCustomerPrivacySetTrackingConsent(
@@ -162,7 +168,12 @@ index 4ea2dc1..b27c7c8 100644
 +              };
 +              customShopify = {
 +                ...customShopify,
-+                customerPrivacy: customCustomerPrivacy
++                customerPrivacy: customCustomerPrivacy,
++
++                // override the customerPrivacy object in Shopify
++                country: config.country,
++                locale: config.locale,
++                accessToken: config.storefrontAccessToken,
 +              };
 +              setLoaded.customerPrivacy();
 +              emitCustomerPrivacyApiLoaded();
@@ -190,7 +201,7 @@ index 4ea2dc1..b27c7c8 100644
    const result = {
      customerPrivacy: getCustomerPrivacy()
    };
-@@ -211,13 +251,9 @@ function useCustomerPrivacy(props) {
+@@ -211,13 +253,9 @@ function useCustomerPrivacy(props) {
    }
    return result;
  }
@@ -206,7 +217,7 @@ index 4ea2dc1..b27c7c8 100644
  function useApisLoaded({
    withPrivacyBanner,
    onLoaded
-@@ -230,8 +266,10 @@ function useApisLoaded({
+@@ -230,8 +268,10 @@ function useApisLoaded({
    const setLoaded = {
      customerPrivacy: () => {
        if (withPrivacyBanner) {
@@ -217,7 +228,7 @@ index 4ea2dc1..b27c7c8 100644
          setApisLoaded(() => [true]);
        }
      },
-@@ -239,6 +277,7 @@ function useApisLoaded({
+@@ -239,6 +279,7 @@ function useApisLoaded({
        if (!withPrivacyBanner) {
          return;
        }
@@ -225,7 +236,7 @@ index 4ea2dc1..b27c7c8 100644
        setApisLoaded((prev) => [prev[0], true]);
      }
    };
-@@ -262,12 +301,15 @@ function parseStoreDomain(checkoutDomain) {
+@@ -262,12 +303,15 @@ function parseStoreDomain(checkoutDomain) {
    });
    return sameDomainParts.reverse().join(".");
  }
@@ -241,7 +252,7 @@ index 4ea2dc1..b27c7c8 100644
    function updatedSetTrackingConsent(consent, callback) {
      original(
        {
-@@ -280,6 +322,7 @@ function overrideCustomerPrivacySetTrackingConsent({
+@@ -280,10 +324,12 @@ function overrideCustomerPrivacySetTrackingConsent({
    }
    return updatedSetTrackingConsent;
  }
@@ -249,7 +260,12 @@ index 4ea2dc1..b27c7c8 100644
  function overridePrivacyBannerMethods({
    privacyBanner,
    config
-@@ -302,6 +345,7 @@ function overridePrivacyBannerMethods({
+ }) {
++  console.log('overridePrivacyBannerMethods', config);
+   const originalLoadBanner = privacyBanner.loadBanner;
+   const originalShowPreferences = privacyBanner.showPreferences;
+   function loadBanner(userConfig) {
+@@ -302,6 +348,7 @@ function overridePrivacyBannerMethods({
    }
    return { loadBanner, showPreferences };
  }
@@ -257,7 +273,7 @@ index 4ea2dc1..b27c7c8 100644
  function getCustomerPrivacy() {
    try {
      return window.Shopify && window.Shopify.customerPrivacy ? window.Shopify?.customerPrivacy : null;
-@@ -309,6 +353,7 @@ function getCustomerPrivacy() {
+@@ -309,6 +356,7 @@ function getCustomerPrivacy() {
      return null;
    }
  }
@@ -265,7 +281,7 @@ index 4ea2dc1..b27c7c8 100644
  function getPrivacyBanner() {
    try {
      return window && window?.privacyBanner ? window.privacyBanner : null;
-@@ -324,62 +369,77 @@ var version = "2025.1.1";
+@@ -324,62 +372,77 @@ var version = "2025.1.1";
  function getCustomerPrivacyRequired() {
    const customerPrivacy = getCustomerPrivacy();
    if (!customerPrivacy) {
@@ -362,7 +378,7 @@ index 4ea2dc1..b27c7c8 100644
    const hasUserConsent = customerPrivacy.analyticsProcessingAllowed();
    if (!payload?.shop?.shopId) {
      logMissingConfig2("shopId");
-@@ -411,6 +471,7 @@ function prepareBasePageViewPayload(payload) {
+@@ -411,6 +474,7 @@ function prepareBasePageViewPayload(payload) {
    };
    return eventPayload;
  }
@@ -370,7 +386,7 @@ index 4ea2dc1..b27c7c8 100644
  function prepareBaseCartPayload(payload, cart) {
    if (cart === null) return;
    const pageViewPayload = prepareBasePageViewPayload(payload);
-@@ -421,7 +482,9 @@ function prepareBaseCartPayload(payload, cart) {
+@@ -421,7 +485,9 @@ function prepareBaseCartPayload(payload, cart) {
    };
    return eventPayload;
  }
@@ -380,7 +396,7 @@ index 4ea2dc1..b27c7c8 100644
  function pageViewHandler(payload) {
    const eventPayload = prepareBasePageViewPayload(payload);
    if (!eventPayload) return;
-@@ -434,6 +497,7 @@ function pageViewHandler(payload) {
+@@ -434,6 +500,7 @@ function pageViewHandler(payload) {
    });
    viewPayload = {};
  }
@@ -388,7 +404,7 @@ index 4ea2dc1..b27c7c8 100644
  function productViewHandler(payload) {
    let eventPayload = prepareBasePageViewPayload(payload);
    if (eventPayload && validateProducts({
-@@ -456,6 +520,7 @@ function productViewHandler(payload) {
+@@ -456,6 +523,7 @@ function productViewHandler(payload) {
      });
    }
  }
@@ -396,7 +412,7 @@ index 4ea2dc1..b27c7c8 100644
  function collectionViewHandler(payload) {
    let eventPayload = prepareBasePageViewPayload(payload);
    if (!eventPayload) return;
-@@ -474,6 +539,7 @@ function collectionViewHandler(payload) {
+@@ -474,6 +542,7 @@ function collectionViewHandler(payload) {
      payload: eventPayload
    });
  }
@@ -404,7 +420,7 @@ index 4ea2dc1..b27c7c8 100644
  function searchViewHandler(payload) {
    let eventPayload = prepareBasePageViewPayload(payload);
    if (!eventPayload) return;
-@@ -490,6 +556,7 @@ function searchViewHandler(payload) {
+@@ -490,6 +559,7 @@ function searchViewHandler(payload) {
      payload: eventPayload
    });
  }
@@ -412,7 +428,7 @@ index 4ea2dc1..b27c7c8 100644
  function productAddedToCartHandler(payload) {
    const { cart, currentLine } = payload;
    const eventPayload = prepareBaseCartPayload(payload, cart);
-@@ -499,6 +566,7 @@ function productAddedToCartHandler(payload) {
+@@ -499,6 +569,7 @@ function productAddedToCartHandler(payload) {
      eventPayload
    });
  }
@@ -420,7 +436,7 @@ index 4ea2dc1..b27c7c8 100644
  function sendCartAnalytics({
    matchedLine,
    eventPayload
-@@ -593,11 +661,13 @@ function formatProduct(products) {
+@@ -593,11 +664,13 @@ function formatProduct(products) {
      return formattedProduct;
    });
  }
@@ -434,7 +450,7 @@ index 4ea2dc1..b27c7c8 100644
  function CartAnalytics({
    cart: currentCart,
    setCarts
-@@ -716,6 +786,7 @@ function PerfKit({ shop }) {
+@@ -716,6 +789,7 @@ function PerfKit({ shop }) {
      if (scriptStatus !== "done" || loadedEvent.current) return;
      loadedEvent.current = true;
      subscribe2(AnalyticsEvent.PAGE_VIEWED, () => {
@@ -442,7 +458,7 @@ index 4ea2dc1..b27c7c8 100644
        window.PerfKit?.navigate();
      });
      subscribe2(AnalyticsEvent.PRODUCT_VIEWED, () => {
-@@ -756,12 +827,11 @@ var defaultAnalyticsContext = {
+@@ -756,12 +830,11 @@ var defaultAnalyticsContext = {
    customData: {},
    prevCart: null,
    publish: () => {
@@ -458,7 +474,7 @@ index 4ea2dc1..b27c7c8 100644
    customerPrivacy: null,
    privacyBanner: null
  };
-@@ -776,20 +846,34 @@ function areRegistersReady() {
+@@ -776,20 +849,34 @@ function areRegistersReady() {
  function subscribe(event, callback) {
    if (!subscribers.has(event)) {
      subscribers.set(event, /* @__PURE__ */ new Map());
@@ -493,7 +509,7 @@ index 4ea2dc1..b27c7c8 100644
        callback(payload);
      } catch (error) {
        if (typeof error === "object" && error instanceof Error) {
-@@ -800,7 +884,7 @@ function publishEvent(event, payload) {
+@@ -800,7 +887,7 @@ function publishEvent(event, payload) {
            error.stack
          );
        } else {
@@ -502,7 +518,7 @@ index 4ea2dc1..b27c7c8 100644
        }
      }
    });
-@@ -812,12 +896,17 @@ function register(key) {
+@@ -812,12 +899,17 @@ function register(key) {
    return {
      ready: () => {
        registers[key] = true;
@@ -520,7 +536,7 @@ index 4ea2dc1..b27c7c8 100644
      }
    };
  }
-@@ -847,8 +936,11 @@ function AnalyticsProvider({
+@@ -847,8 +939,11 @@ function AnalyticsProvider({
    );
    const [carts, setCarts] = useState({ cart: null, prevCart: null });
    const [canTrack, setCanTrack] = useState(
@@ -533,24 +549,7 @@ index 4ea2dc1..b27c7c8 100644
    if (!!shop) {
      if (/\/68817551382$/.test(shop.shopId)) {
        warnOnce(
-@@ -871,43 +963,73 @@ function AnalyticsProvider({
-       }
-       if (!consent?.country) {
-         consent.country = "US";
-+        if(!window.Shopify) {
-+          window.Shopify = {};
-+        }
-+        window.Shopify.country = "US"
-       }
-       if (!consent?.language) {
-         consent.language = "EN";
-+        if(!window.Shopify) {
-+          window.Shopify = {};
-+        }
-+        window.Shopify.language = "EN";
-       }
-       if (consent.withPrivacyBanner === void 0) {
-         consent.withPrivacyBanner = false;
+@@ -880,34 +975,56 @@ function AnalyticsProvider({
        }
      }
    }
@@ -631,7 +630,7 @@ index 4ea2dc1..b27c7c8 100644
    return /* @__PURE__ */ jsxs(AnalyticsContext.Provider, { value, children: [
      children,
      !!shop && /* @__PURE__ */ jsx(AnalyticsPageView, {}),
-@@ -918,10 +1040,13 @@ function AnalyticsProvider({
+@@ -918,10 +1035,13 @@ function AnalyticsProvider({
          consent,
          onReady: () => {
            listenerSet.current = true;
@@ -647,7 +646,7 @@ index 4ea2dc1..b27c7c8 100644
          },
          domain: cookieDomain
        }
-@@ -929,6 +1054,7 @@ function AnalyticsProvider({
+@@ -929,6 +1049,7 @@ function AnalyticsProvider({
      !!shop && /* @__PURE__ */ jsx(PerfKit, { shop })
    ] });
  }
@@ -655,7 +654,7 @@ index 4ea2dc1..b27c7c8 100644
  function useAnalytics() {
    const analyticsContext = useContext(AnalyticsContext);
    if (!analyticsContext) {
-@@ -938,6 +1064,7 @@ function useAnalytics() {
+@@ -938,6 +1059,7 @@ function useAnalytics() {
    }
    return analyticsContext;
  }
@@ -663,7 +662,7 @@ index 4ea2dc1..b27c7c8 100644
  function useShopAnalytics(shopProp) {
    const [shop, setShop] = useState(null);
    useEffect(() => {
-@@ -947,6 +1074,7 @@ function useShopAnalytics(shopProp) {
+@@ -947,6 +1069,7 @@ function useShopAnalytics(shopProp) {
    }, [setShop, shopProp]);
    return { shop };
  }
