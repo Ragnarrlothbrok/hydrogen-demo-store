@@ -1,5 +1,5 @@
 diff --git a/node_modules/@shopify/hydrogen/dist/development/index.js b/node_modules/@shopify/hydrogen/dist/development/index.js
-index 4ea2dc1..6e7c91a 100644
+index 4ea2dc1..9dc11d1 100644
 --- a/node_modules/@shopify/hydrogen/dist/development/index.js
 +++ b/node_modules/@shopify/hydrogen/dist/development/index.js
 @@ -29,7 +29,11 @@ function AnalyticsView(props) {
@@ -161,7 +161,7 @@ index 4ea2dc1..6e7c91a 100644
    });
    useShopifyCookies({
      hasUserConsent: privacyReady ? canTrack() : true,
-@@ -357,18 +381,24 @@ function ShopifyAnalytics({
+@@ -357,18 +381,26 @@ function ShopifyAnalytics({
    });
    useEffect(() => {
      if (init.current) return;
@@ -179,14 +179,17 @@ index 4ea2dc1..6e7c91a 100644
 +    console.log('ShopifyAnalytics: useEffect - shopifyReady', shopifyReady, 'privacyReady', privacyReady);
      if (shopifyReady && privacyReady) {
        shopifyAnalyticsReady();
-       onReady();
-+      console.log(
-+        'ShopifyAnalytics: Shopify Analytics API loaded'
-+      )
+-      onReady();
++      setTimeout(() => {
++        onReady();
++        console.log(
++          'ShopifyAnalytics: Shopify Analytics API loaded'
++        )
++      }, 50)
      }
    }, [shopifyReady, privacyReady, onReady]);
    return null;
-@@ -716,6 +746,7 @@ function PerfKit({ shop }) {
+@@ -716,6 +748,7 @@ function PerfKit({ shop }) {
      if (scriptStatus !== "done" || loadedEvent.current) return;
      loadedEvent.current = true;
      subscribe2(AnalyticsEvent.PAGE_VIEWED, () => {
@@ -194,7 +197,7 @@ index 4ea2dc1..6e7c91a 100644
        window.PerfKit?.navigate();
      });
      subscribe2(AnalyticsEvent.PRODUCT_VIEWED, () => {
-@@ -756,6 +787,7 @@ var defaultAnalyticsContext = {
+@@ -756,6 +789,7 @@ var defaultAnalyticsContext = {
    customData: {},
    prevCart: null,
    publish: () => {
@@ -202,7 +205,7 @@ index 4ea2dc1..6e7c91a 100644
    },
    shop: null,
    subscribe: () => {
-@@ -776,12 +808,16 @@ function areRegistersReady() {
+@@ -776,12 +810,16 @@ function areRegistersReady() {
  function subscribe(event, callback) {
    if (!subscribers.has(event)) {
      subscribers.set(event, /* @__PURE__ */ new Map());
@@ -213,13 +216,13 @@ index 4ea2dc1..6e7c91a 100644
  }
  var waitForReadyQueue = /* @__PURE__ */ new Map();
  function publish(event, payload) {
-+  console.log('actual publish: areRegistersReady()?', areRegistersReady());
++  console.log('publish: real areRegistersReady()?', areRegistersReady());
    if (!areRegistersReady()) {
 +    console.log(`publish: ${event} is waiting for registers to be ready`);
      waitForReadyQueue.set(event, payload);
      return;
    }
-@@ -790,6 +826,7 @@ function publish(event, payload) {
+@@ -790,6 +828,7 @@ function publish(event, payload) {
  function publishEvent(event, payload) {
    (subscribers.get(event) ?? /* @__PURE__ */ new Map()).forEach((callback, subscriber) => {
      try {
@@ -227,7 +230,7 @@ index 4ea2dc1..6e7c91a 100644
        callback(payload);
      } catch (error) {
        if (typeof error === "object" && error instanceof Error) {
-@@ -800,7 +837,7 @@ function publishEvent(event, payload) {
+@@ -800,7 +839,7 @@ function publishEvent(event, payload) {
            error.stack
          );
        } else {
@@ -236,7 +239,7 @@ index 4ea2dc1..6e7c91a 100644
        }
      }
    });
-@@ -812,12 +849,17 @@ function register(key) {
+@@ -812,12 +851,17 @@ function register(key) {
    return {
      ready: () => {
        registers[key] = true;
@@ -254,8 +257,11 @@ index 4ea2dc1..6e7c91a 100644
      }
    };
  }
-@@ -847,7 +889,9 @@ function AnalyticsProvider({
+@@ -845,10 +889,15 @@ function AnalyticsProvider({
+   const [analyticsLoaded, setAnalyticsLoaded] = useState(
+     customCanTrack ? true : false
    );
++
    const [carts, setCarts] = useState({ cart: null, prevCart: null });
    const [canTrack, setCanTrack] = useState(
 -    customCanTrack ? () => customCanTrack : () => shopifyCanTrack
@@ -263,27 +269,16 @@ index 4ea2dc1..6e7c91a 100644
 +      ? () => customCanTrack
 +      : () => shopifyCanTrack
    );
++    const [pub, setPub] = useState(canTrack() ? publish : () => { console.log('publish: no-op before canTrack')});
++
    if (!!shop) {
      if (/\/68817551382$/.test(shop.shopId)) {
-@@ -880,34 +924,51 @@ function AnalyticsProvider({
+       warnOnce(
+@@ -880,34 +929,66 @@ function AnalyticsProvider({
        }
      }
    }
 -  const value = useMemo(() => {
--    return {
--      canTrack,
--      ...carts,
--      customData,
--      publish: canTrack() ? publish : () => {
--      },
--      shop,
--      subscribe,
--      register,
--      customerPrivacy: getCustomerPrivacy(),
--      privacyBanner: getPrivacyBanner()
--    };
--  }, [
--    analyticsLoaded,
 +  function getCustomerPrivacy() {
 +    try {
 +      return window.Shopify && window.Shopify.customerPrivacy ? window.Shopify?.customerPrivacy : null;
@@ -299,30 +294,53 @@ index 4ea2dc1..6e7c91a 100644
 +    }
 +  }
 +
-+  const p = canTrack() ? publish : () => {
-+    console.log('AnalyticsProvider: publish is no-op because canTrack is', canTrack());
-+  }
 +
-+  const value = {
-     canTrack,
++
++  useEffect(() => {
++    if (analyticsLoaded) {
++      const isCanTrack = canTrack()
++        setPub(isCanTrack ? () => {
++           console.log('publish: can track real publish set');
++         return publish
++         } : () => {
++          console.log('publish: is no-op because canTrack is false')
++        })
++    }
++  }, [analyticsLoaded, canTrack])
++
++
++  const value =  useMemo(() => {
+     return {
+       canTrack,
+       ...carts,
+       customData,
+-      publish: canTrack() ? publish : () => {
+-      },
++      publish: pub,
+       shop,
+       subscribe,
+       register,
+       customerPrivacy: getCustomerPrivacy(),
+       privacyBanner: getPrivacyBanner()
+-    };
+-  }, [
+-    analyticsLoaded,
+-    canTrack,
 -    carts,
 -    carts.cart?.updatedAt,
 -    carts.prevCart,
 -    publish,
 -    subscribe,
-+    ...carts,
-     customData,
-+    publish: p,
-     shop,
-+    subscribe,
-     register,
+-    customData,
+-    shop,
+-    register,
 -    JSON.stringify(registers),
 -    getCustomerPrivacy,
 -    getPrivacyBanner
 -  ]);
-+    customerPrivacy: getCustomerPrivacy(),
-+    privacyBanner: getPrivacyBanner()
-+  }
++    }
++  }, [pub, analyticsLoaded, canTrack, carts, customData, p, shop, getCustomerPrivacy, getPrivacyBanner, register, sub]);
++
 +  console.log('-------------------------')
 +  console.log(JSON.stringify(value))
 +  console.log('-------------------------')
@@ -338,20 +356,23 @@ index 4ea2dc1..6e7c91a 100644
 +      window.removeEventListener('shopifyCustomerPrivacyApiLoaded', shopifyCustomerPrivacyApiLoaded);
 +    }
 +  }, []);
++
    return /* @__PURE__ */ jsxs(AnalyticsContext.Provider, { value, children: [
      children,
      !!shop && /* @__PURE__ */ jsx(AnalyticsPageView, {}),
-@@ -918,9 +979,12 @@ function AnalyticsProvider({
+@@ -918,10 +999,13 @@ function AnalyticsProvider({
          consent,
          onReady: () => {
            listenerSet.current = true;
+-          setAnalyticsLoaded(true);
 +          console.log('ShopifyAnalytics:onReady shopifyCanTrack', typeof shopifyCanTrack, shopifyCanTrack());
-           setAnalyticsLoaded(true);
            setCanTrack(
 -            customCanTrack ? () => customCanTrack : () => shopifyCanTrack
 +            customCanTrack
 +              ? () => customCanTrack
 +              : () => shopifyCanTrack
            );
++          setAnalyticsLoaded(true);
          },
          domain: cookieDomain
+       }
