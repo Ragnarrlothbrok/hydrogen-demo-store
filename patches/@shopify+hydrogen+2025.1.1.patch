@@ -1,5 +1,5 @@
 diff --git a/node_modules/@shopify/hydrogen/dist/development/index.js b/node_modules/@shopify/hydrogen/dist/development/index.js
-index 4ea2dc1..68626ac 100644
+index 4ea2dc1..2078124 100644
 --- a/node_modules/@shopify/hydrogen/dist/development/index.js
 +++ b/node_modules/@shopify/hydrogen/dist/development/index.js
 @@ -10,6 +10,7 @@ import cspBuilder from 'content-security-policy-builder';
@@ -84,7 +84,7 @@ index 4ea2dc1..68626ac 100644
 +      setTimeout(() => {
 +        onReady(event)
 +        customerPrivacyReady()
-+      }, 50)
++      }, 10)
 +    }
    });
 +
