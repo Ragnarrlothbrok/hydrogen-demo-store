@@ -1,5 +1,5 @@
 diff --git a/node_modules/@shopify/hydrogen/dist/development/index.js b/node_modules/@shopify/hydrogen/dist/development/index.js
-index 4ea2dc1..7346eec 100644
+index 4ea2dc1..3aa0164 100644
 --- a/node_modules/@shopify/hydrogen/dist/development/index.js
 +++ b/node_modules/@shopify/hydrogen/dist/development/index.js
 @@ -29,7 +29,11 @@ function AnalyticsView(props) {
@@ -221,7 +221,7 @@ index 4ea2dc1..7346eec 100644
    customerPrivacy: null,
    privacyBanner: null
  };
-@@ -776,20 +809,33 @@ function areRegistersReady() {
+@@ -776,20 +809,34 @@ function areRegistersReady() {
  function subscribe(event, callback) {
    if (!subscribers.has(event)) {
      subscribers.set(event, /* @__PURE__ */ new Map());
@@ -233,18 +233,19 @@ index 4ea2dc1..7346eec 100644
  var waitForReadyQueue = /* @__PURE__ */ new Map();
 +
  function publish(event, payload) {
-+  if (!shopifyCanTrack()) {
-+    console.warn(
-+      'publish: Shopify cannot track analytics events because customer privacy API is not ready or consent is not given.'
-+    )
-+    return;
-+  }
 +  console.log('publish: real areRegistersReady()?', areRegistersReady());
    if (!areRegistersReady()) {
 +    console.log(`publish: ${event} is waiting for registers to be ready`);
      waitForReadyQueue.set(event, payload);
      return;
    }
++    if (!shopifyCanTrack()) {
++    console.warn(
++      'publish: Shopify cannot track analytics events because customer privacy API is not ready or consent is not given.'
++    )
++    return;
++  }
++
    publishEvent(event, payload);
  }
 +
@@ -255,7 +256,7 @@ index 4ea2dc1..7346eec 100644
        callback(payload);
      } catch (error) {
        if (typeof error === "object" && error instanceof Error) {
-@@ -800,7 +846,7 @@ function publishEvent(event, payload) {
+@@ -800,7 +847,7 @@ function publishEvent(event, payload) {
            error.stack
          );
        } else {
@@ -264,7 +265,7 @@ index 4ea2dc1..7346eec 100644
        }
      }
    });
-@@ -812,12 +858,17 @@ function register(key) {
+@@ -812,12 +859,17 @@ function register(key) {
    return {
      ready: () => {
        registers[key] = true;
@@ -282,7 +283,7 @@ index 4ea2dc1..7346eec 100644
      }
    };
  }
-@@ -847,8 +898,11 @@ function AnalyticsProvider({
+@@ -847,8 +899,11 @@ function AnalyticsProvider({
    );
    const [carts, setCarts] = useState({ cart: null, prevCart: null });
    const [canTrack, setCanTrack] = useState(
@@ -295,7 +296,7 @@ index 4ea2dc1..7346eec 100644
    if (!!shop) {
      if (/\/68817551382$/.test(shop.shopId)) {
        warnOnce(
-@@ -880,34 +934,50 @@ function AnalyticsProvider({
+@@ -880,34 +935,50 @@ function AnalyticsProvider({
        }
      }
    }
@@ -370,7 +371,7 @@ index 4ea2dc1..7346eec 100644
    return /* @__PURE__ */ jsxs(AnalyticsContext.Provider, { value, children: [
      children,
      !!shop && /* @__PURE__ */ jsx(AnalyticsPageView, {}),
-@@ -918,10 +988,13 @@ function AnalyticsProvider({
+@@ -918,10 +989,13 @@ function AnalyticsProvider({
          consent,
          onReady: () => {
            listenerSet.current = true;
