@@ -1,5 +1,5 @@
 diff --git a/node_modules/@shopify/hydrogen/dist/development/index.js b/node_modules/@shopify/hydrogen/dist/development/index.js
-index 4ea2dc1..f7f6b9e 100644
+index 4ea2dc1..0c08412 100644
 --- a/node_modules/@shopify/hydrogen/dist/development/index.js
 +++ b/node_modules/@shopify/hydrogen/dist/development/index.js
 @@ -29,7 +29,11 @@ function AnalyticsView(props) {
@@ -15,7 +15,7 @@ index 4ea2dc1..f7f6b9e 100644
      viewPayload2 = {
        ...viewPayload2,
        url: window.location.href
-@@ -80,21 +84,36 @@ function logMissingConfig(fieldName) {
+@@ -80,21 +84,34 @@ function logMissingConfig(fieldName) {
    );
  }
  function useCustomerPrivacy(props) {
@@ -41,7 +41,6 @@ index 4ea2dc1..f7f6b9e 100644
 +      onReady(event)
 +    }
    });
-+
 +  function emitCustomerPrivacyApiLoaded() {
 +    if (hasEmitted) return;
 +    hasEmitted = true;
@@ -50,11 +49,10 @@ index 4ea2dc1..f7f6b9e 100644
 +    console.log('[debug:useCustomerPrivacy] - Emitting shopifyCustomerPrivacyApiLoaded event');
 +    customerPrivacyReady()
 +  }
-+
    const config = useMemo(() => {
      const { checkoutDomain, storefrontAccessToken } = consentConfig;
      if (!checkoutDomain) logMissingConfig("checkoutDomain");
-@@ -157,9 +176,11 @@ function useCustomerPrivacy(props) {
+@@ -157,9 +174,11 @@ function useCustomerPrivacy(props) {
      withPrivacyBanner,
      config,
      overridePrivacyBannerMethods,
@@ -67,7 +65,7 @@ index 4ea2dc1..f7f6b9e 100644
      if (observing.current.customerPrivacy) return;
      observing.current.customerPrivacy = true;
      let customCustomerPrivacy = null;
-@@ -183,26 +204,28 @@ function useCustomerPrivacy(props) {
+@@ -183,26 +202,28 @@ function useCustomerPrivacy(props) {
                  customCustomerPrivacy = {
                    ...customerPrivacy,
                    setTrackingConsent: overrideCustomerPrivacySetTrackingConsent(
@@ -114,7 +112,7 @@ index 4ea2dc1..f7f6b9e 100644
    const result = {
      customerPrivacy: getCustomerPrivacy()
    };
-@@ -212,12 +235,6 @@ function useCustomerPrivacy(props) {
+@@ -212,12 +233,6 @@ function useCustomerPrivacy(props) {
    return result;
  }
  var hasEmitted = false;
@@ -127,26 +125,26 @@ index 4ea2dc1..f7f6b9e 100644
  function useApisLoaded({
    withPrivacyBanner,
    onLoaded
-@@ -230,8 +247,10 @@ function useApisLoaded({
+@@ -230,8 +245,10 @@ function useApisLoaded({
    const setLoaded = {
      customerPrivacy: () => {
        if (withPrivacyBanner) {
-+        console.log('Customer Privacy API loaded');
++        console.log('useApisLoaded: Customer Privacy API loaded');
          setApisLoaded((prev) => [true, prev[1]]);
        } else {
-+        console.log('Customer Privacy API loaded without Privacy Banner');
++        console.log('useApisLoaded: Customer Privacy API loaded without Privacy Banner');
          setApisLoaded(() => [true]);
        }
      },
-@@ -239,6 +258,7 @@ function useApisLoaded({
+@@ -239,6 +256,7 @@ function useApisLoaded({
        if (!withPrivacyBanner) {
          return;
        }
-+      console.log('Privacy Banner API loaded');
++      console.log('useApisLoaded: Privacy Banner API loaded');
        setApisLoaded((prev) => [prev[0], true]);
      }
    };
-@@ -346,8 +366,14 @@ function ShopifyAnalytics({
+@@ -346,8 +364,14 @@ function ShopifyAnalytics({
      locale: language,
      checkoutDomain: !checkoutDomain ? "mock.shop" : checkoutDomain,
      storefrontAccessToken: !storefrontAccessToken ? "abcdefghijklmnopqrstuvwxyz123456" : storefrontAccessToken,
@@ -163,7 +161,7 @@ index 4ea2dc1..f7f6b9e 100644
    });
    useShopifyCookies({
      hasUserConsent: privacyReady ? canTrack() : true,
-@@ -357,18 +383,23 @@ function ShopifyAnalytics({
+@@ -357,18 +381,24 @@ function ShopifyAnalytics({
    });
    useEffect(() => {
      if (init.current) return;
@@ -178,6 +176,7 @@ index 4ea2dc1..f7f6b9e 100644
      setShopifyReady(true);
    }, [subscribe2]);
    useEffect(() => {
++    console.lo('ShopifyAnalytics: useEffect - shopifyReady', shopifyReady, 'privacyReady', privacyReady);
      if (shopifyReady && privacyReady) {
        shopifyAnalyticsReady();
        onReady();
@@ -187,7 +186,7 @@ index 4ea2dc1..f7f6b9e 100644
      }
    }, [shopifyReady, privacyReady, onReady]);
    return null;
-@@ -716,6 +747,7 @@ function PerfKit({ shop }) {
+@@ -716,6 +746,7 @@ function PerfKit({ shop }) {
      if (scriptStatus !== "done" || loadedEvent.current) return;
      loadedEvent.current = true;
      subscribe2(AnalyticsEvent.PAGE_VIEWED, () => {
@@ -195,7 +194,7 @@ index 4ea2dc1..f7f6b9e 100644
        window.PerfKit?.navigate();
      });
      subscribe2(AnalyticsEvent.PRODUCT_VIEWED, () => {
-@@ -756,6 +788,7 @@ var defaultAnalyticsContext = {
+@@ -756,6 +787,7 @@ var defaultAnalyticsContext = {
    customData: {},
    prevCart: null,
    publish: () => {
@@ -203,7 +202,7 @@ index 4ea2dc1..f7f6b9e 100644
    },
    shop: null,
    subscribe: () => {
-@@ -776,12 +809,16 @@ function areRegistersReady() {
+@@ -776,12 +808,16 @@ function areRegistersReady() {
  function subscribe(event, callback) {
    if (!subscribers.has(event)) {
      subscribers.set(event, /* @__PURE__ */ new Map());
@@ -220,19 +219,30 @@ index 4ea2dc1..f7f6b9e 100644
      waitForReadyQueue.set(event, payload);
      return;
    }
-@@ -790,6 +827,7 @@ function publish(event, payload) {
+@@ -790,6 +826,7 @@ function publish(event, payload) {
  function publishEvent(event, payload) {
    (subscribers.get(event) ?? /* @__PURE__ */ new Map()).forEach((callback, subscriber) => {
      try {
-+      console.log(`publishEvent: ${event} to ${subscriber}`);
++      console.log(`publishEvent: ${event}`)
        callback(payload);
      } catch (error) {
        if (typeof error === "object" && error instanceof Error) {
-@@ -813,11 +851,15 @@ function register(key) {
+@@ -800,7 +837,7 @@ function publishEvent(event, payload) {
+           error.stack
+         );
+       } else {
+-        console.error("Analytics publish error", error, subscriber);
++        console.error("publishEvent: Analytics publish error", error, subscriber);
+       }
+     }
+   });
+@@ -812,12 +849,17 @@ function register(key) {
+   return {
      ready: () => {
        registers[key] = true;
++      console.log(`registered: ${key} is ready publishing events`, waitForReadyQueue.size, 'events in queue');
++
        if (areRegistersReady() && waitForReadyQueue.size > 0) {
-+        console.log(`registered: ${key} is ready publishing events`, waitForReadyQueue.size, 'events in queue');
          waitForReadyQueue.forEach((queuePayload, queueEvent) => {
            publishEvent(queueEvent, queuePayload);
          });
