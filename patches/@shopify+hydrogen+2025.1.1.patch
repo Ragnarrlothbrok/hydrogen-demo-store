@@ -1,5 +1,5 @@
 diff --git a/node_modules/@shopify/hydrogen/dist/development/index.js b/node_modules/@shopify/hydrogen/dist/development/index.js
-index 4ea2dc1..fdb2872 100644
+index 4ea2dc1..0ef7e26 100644
 --- a/node_modules/@shopify/hydrogen/dist/development/index.js
 +++ b/node_modules/@shopify/hydrogen/dist/development/index.js
 @@ -29,7 +29,11 @@ function AnalyticsView(props) {
@@ -221,7 +221,7 @@ index 4ea2dc1..fdb2872 100644
    customerPrivacy: null,
    privacyBanner: null
  };
-@@ -776,20 +809,27 @@ function areRegistersReady() {
+@@ -776,20 +809,33 @@ function areRegistersReady() {
  function subscribe(event, callback) {
    if (!subscribers.has(event)) {
      subscribers.set(event, /* @__PURE__ */ new Map());
@@ -233,6 +233,12 @@ index 4ea2dc1..fdb2872 100644
  var waitForReadyQueue = /* @__PURE__ */ new Map();
 +
  function publish(event, payload) {
++  if (!shopifyCanTrack()) {
++    console.warn(
++      'publish: Shopify cannot track analytics events because customer privacy API is not ready or consent is not given.'
++    )
++    return;
++  }
 +  console.log('publish: real areRegistersReady()?', areRegistersReady());
    if (!areRegistersReady()) {
 +    console.log(`publish: ${event} is waiting for registers to be ready`);
@@ -249,7 +255,7 @@ index 4ea2dc1..fdb2872 100644
        callback(payload);
      } catch (error) {
        if (typeof error === "object" && error instanceof Error) {
-@@ -800,7 +840,7 @@ function publishEvent(event, payload) {
+@@ -800,7 +846,7 @@ function publishEvent(event, payload) {
            error.stack
          );
        } else {
@@ -258,7 +264,7 @@ index 4ea2dc1..fdb2872 100644
        }
      }
    });
-@@ -812,12 +852,17 @@ function register(key) {
+@@ -812,12 +858,17 @@ function register(key) {
    return {
      ready: () => {
        registers[key] = true;
@@ -276,7 +282,7 @@ index 4ea2dc1..fdb2872 100644
      }
    };
  }
-@@ -847,8 +892,12 @@ function AnalyticsProvider({
+@@ -847,8 +898,11 @@ function AnalyticsProvider({
    );
    const [carts, setCarts] = useState({ cart: null, prevCart: null });
    const [canTrack, setCanTrack] = useState(
@@ -285,15 +291,29 @@ index 4ea2dc1..fdb2872 100644
 +      ? () => customCanTrack
 +      : () => shopifyCanTrack
    );
-+  const [pub, setPub] = useState(canTrack() ? () => publish : () => () => console.log('publish: no-op before canTrack'));
 +
    if (!!shop) {
      if (/\/68817551382$/.test(shop.shopId)) {
        warnOnce(
-@@ -880,34 +929,65 @@ function AnalyticsProvider({
+@@ -880,34 +934,49 @@ function AnalyticsProvider({
        }
      }
    }
+-  const value = useMemo(() => {
+-    return {
+-      canTrack,
+-      ...carts,
+-      customData,
+-      publish: canTrack() ? publish : () => {
+-      },
+-      shop,
+-      subscribe,
+-      register,
+-      customerPrivacy: getCustomerPrivacy(),
+-      privacyBanner: getPrivacyBanner()
+-    };
+-  }, [
+-    analyticsLoaded,
 +  function getCustomerPrivacy() {
 +    try {
 +      return window.Shopify && window.Shopify.customerPrivacy ? window.Shopify?.customerPrivacy : null;
@@ -309,72 +329,47 @@ index 4ea2dc1..fdb2872 100644
 +    }
 +  }
 +
-+  useEffect(() => {
-+    if (analyticsLoaded) {
-+      const isCanTrack = canTrack()
-+      setPub(isCanTrack
-+        ? () => {
-+            console.log('publish: can track real publish set');
-+            return publish
-+          }
-+        : () => {
-+        console.log('publish: is no-op because canTrack is false')
-+      })
-+    }
-+  }, [analyticsLoaded, canTrack, setPub])
-+
-   const value = useMemo(() => {
-     return {
-       canTrack,
-       ...carts,
-       customData,
--      publish: canTrack() ? publish : () => {
--      },
-+      publish: pub,
-       shop,
-       subscribe,
-       register,
-       customerPrivacy: getCustomerPrivacy(),
-       privacyBanner: getPrivacyBanner()
--    };
--  }, [
--    analyticsLoaded,
--    canTrack,
++  const value =  {
+     canTrack,
 -    carts,
 -    carts.cart?.updatedAt,
 -    carts.prevCart,
 -    publish,
 -    subscribe,
--    customData,
--    shop,
--    register,
++    ...carts,
+     customData,
++    publish,
+     shop,
++    subscribe,
+     register,
 -    JSON.stringify(registers),
 -    getCustomerPrivacy,
 -    getPrivacyBanner
 -  ]);
-+    }
-+  }, [pub, analyticsLoaded, canTrack, carts, customData, shop, getCustomerPrivacy, getPrivacyBanner, register, subscribe]);
++    customerPrivacy: getCustomerPrivacy(),
++    privacyBanner: getPrivacyBanner()
++  }
 +
 +  console.log('-------------------------')
 +  console.log(JSON.stringify(value))
 +  console.log('-------------------------')
 +
-+  // listen to shopifyCustomerPrivacyApiLoaded custom event
-+  useEffect(() => {
-+    function shopifyCustomerPrivacyApiLoaded(event) {
-+      console.log('--> privacy api loaded event', event);
-+    }
-+    window.addEventListener('shopifyCustomerPrivacyApiLoaded', shopifyCustomerPrivacyApiLoaded);
-+
-+    return () => {
-+      window.removeEventListener('shopifyCustomerPrivacyApiLoaded', shopifyCustomerPrivacyApiLoaded);
-+    }
-+  }, []);
++  // // listen to shopifyCustomerPrivacyApiLoaded custom event
++  // useEffect(() => {
++  //   function shopifyCustomerPrivacyApiLoaded(event) {
++  //     console.log('--> privacy api loaded event', event);
++  //   }
++  //   window.addEventListener('shopifyCustomerPrivacyApiLoaded', shopifyCustomerPrivacyApiLoaded);
++  //
++  //   return () => {
++  //     window.removeEventListener('shopifyCustomerPrivacyApiLoaded', shopifyCustomerPrivacyApiLoaded);
++  //   }
++  // }, []);
 +
    return /* @__PURE__ */ jsxs(AnalyticsContext.Provider, { value, children: [
      children,
      !!shop && /* @__PURE__ */ jsx(AnalyticsPageView, {}),
-@@ -918,10 +998,13 @@ function AnalyticsProvider({
+@@ -918,10 +987,13 @@ function AnalyticsProvider({
          consent,
          onReady: () => {
            listenerSet.current = true;
@@ -386,7 +381,7 @@ index 4ea2dc1..fdb2872 100644
 +              ? () => customCanTrack
 +              : () => shopifyCanTrack
            );
-+          setAnalyticsLoaded(true);
++          // setAnalyticsLoaded(true);
          },
          domain: cookieDomain
        }
