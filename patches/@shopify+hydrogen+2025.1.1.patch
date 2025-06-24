@@ -1,5 +1,5 @@
 diff --git a/node_modules/@shopify/hydrogen/dist/development/index.js b/node_modules/@shopify/hydrogen/dist/development/index.js
-index 4ea2dc1..cba5f58 100644
+index 4ea2dc1..f23713e 100644
 --- a/node_modules/@shopify/hydrogen/dist/development/index.js
 +++ b/node_modules/@shopify/hydrogen/dist/development/index.js
 @@ -29,7 +29,11 @@ function AnalyticsView(props) {
@@ -15,7 +15,15 @@ index 4ea2dc1..cba5f58 100644
      viewPayload2 = {
        ...viewPayload2,
        url: window.location.href
-@@ -80,21 +84,34 @@ function logMissingConfig(fieldName) {
+@@ -38,6 +42,7 @@ function AnalyticsView(props) {
+   }, [publish2, url, shop?.shopId]);
+   return null;
+ }
++
+ function AnalyticsPageView(props) {
+   return /* @__PURE__ */ jsx(AnalyticsView, { ...props, type: "page_viewed" });
+ }
+@@ -80,21 +85,34 @@ function logMissingConfig(fieldName) {
    );
  }
  function useCustomerPrivacy(props) {
@@ -52,7 +60,7 @@ index 4ea2dc1..cba5f58 100644
    const config = useMemo(() => {
      const { checkoutDomain, storefrontAccessToken } = consentConfig;
      if (!checkoutDomain) logMissingConfig("checkoutDomain");
-@@ -157,9 +174,11 @@ function useCustomerPrivacy(props) {
+@@ -157,9 +175,11 @@ function useCustomerPrivacy(props) {
      withPrivacyBanner,
      config,
      overridePrivacyBannerMethods,
@@ -65,7 +73,7 @@ index 4ea2dc1..cba5f58 100644
      if (observing.current.customerPrivacy) return;
      observing.current.customerPrivacy = true;
      let customCustomerPrivacy = null;
-@@ -183,26 +202,28 @@ function useCustomerPrivacy(props) {
+@@ -183,26 +203,28 @@ function useCustomerPrivacy(props) {
                  customCustomerPrivacy = {
                    ...customerPrivacy,
                    setTrackingConsent: overrideCustomerPrivacySetTrackingConsent(
@@ -112,7 +120,7 @@ index 4ea2dc1..cba5f58 100644
    const result = {
      customerPrivacy: getCustomerPrivacy()
    };
-@@ -212,12 +233,6 @@ function useCustomerPrivacy(props) {
+@@ -212,12 +234,6 @@ function useCustomerPrivacy(props) {
    return result;
  }
  var hasEmitted = false;
@@ -125,7 +133,7 @@ index 4ea2dc1..cba5f58 100644
  function useApisLoaded({
    withPrivacyBanner,
    onLoaded
-@@ -230,8 +245,10 @@ function useApisLoaded({
+@@ -230,8 +246,10 @@ function useApisLoaded({
    const setLoaded = {
      customerPrivacy: () => {
        if (withPrivacyBanner) {
@@ -136,7 +144,7 @@ index 4ea2dc1..cba5f58 100644
          setApisLoaded(() => [true]);
        }
      },
-@@ -239,6 +256,7 @@ function useApisLoaded({
+@@ -239,6 +257,7 @@ function useApisLoaded({
        if (!withPrivacyBanner) {
          return;
        }
@@ -144,7 +152,7 @@ index 4ea2dc1..cba5f58 100644
        setApisLoaded((prev) => [prev[0], true]);
      }
    };
-@@ -346,8 +364,14 @@ function ShopifyAnalytics({
+@@ -346,8 +365,14 @@ function ShopifyAnalytics({
      locale: language,
      checkoutDomain: !checkoutDomain ? "mock.shop" : checkoutDomain,
      storefrontAccessToken: !storefrontAccessToken ? "abcdefghijklmnopqrstuvwxyz123456" : storefrontAccessToken,
@@ -161,7 +169,7 @@ index 4ea2dc1..cba5f58 100644
    });
    useShopifyCookies({
      hasUserConsent: privacyReady ? canTrack() : true,
-@@ -357,18 +381,26 @@ function ShopifyAnalytics({
+@@ -357,18 +382,26 @@ function ShopifyAnalytics({
    });
    useEffect(() => {
      if (init.current) return;
@@ -189,7 +197,7 @@ index 4ea2dc1..cba5f58 100644
      }
    }, [shopifyReady, privacyReady, onReady]);
    return null;
-@@ -716,6 +748,7 @@ function PerfKit({ shop }) {
+@@ -716,6 +749,7 @@ function PerfKit({ shop }) {
      if (scriptStatus !== "done" || loadedEvent.current) return;
      loadedEvent.current = true;
      subscribe2(AnalyticsEvent.PAGE_VIEWED, () => {
@@ -197,15 +205,23 @@ index 4ea2dc1..cba5f58 100644
        window.PerfKit?.navigate();
      });
      subscribe2(AnalyticsEvent.PRODUCT_VIEWED, () => {
-@@ -756,6 +789,7 @@ var defaultAnalyticsContext = {
+@@ -756,12 +790,11 @@ var defaultAnalyticsContext = {
    customData: {},
    prevCart: null,
    publish: () => {
 +    console.log('defaultAnalyticsContext: publish is no-op because canTrack is no-op by default');
    },
    shop: null,
-   subscribe: () => {
-@@ -776,12 +810,16 @@ function areRegistersReady() {
+-  subscribe: () => {
+-  },
+-  register: () => ({ ready: () => {
+-  } }),
++  subscribe: () => {},
++  register: () => ({ ready: () => { console.log('register: no-op default')} }),
+   customerPrivacy: null,
+   privacyBanner: null
+ };
+@@ -776,12 +809,16 @@ function areRegistersReady() {
  function subscribe(event, callback) {
    if (!subscribers.has(event)) {
      subscribers.set(event, /* @__PURE__ */ new Map());
@@ -222,7 +238,7 @@ index 4ea2dc1..cba5f58 100644
      waitForReadyQueue.set(event, payload);
      return;
    }
-@@ -790,6 +828,7 @@ function publish(event, payload) {
+@@ -790,6 +827,7 @@ function publish(event, payload) {
  function publishEvent(event, payload) {
    (subscribers.get(event) ?? /* @__PURE__ */ new Map()).forEach((callback, subscriber) => {
      try {
@@ -230,7 +246,7 @@ index 4ea2dc1..cba5f58 100644
        callback(payload);
      } catch (error) {
        if (typeof error === "object" && error instanceof Error) {
-@@ -800,7 +839,7 @@ function publishEvent(event, payload) {
+@@ -800,7 +838,7 @@ function publishEvent(event, payload) {
            error.stack
          );
        } else {
@@ -239,7 +255,7 @@ index 4ea2dc1..cba5f58 100644
        }
      }
    });
-@@ -812,12 +851,17 @@ function register(key) {
+@@ -812,12 +850,17 @@ function register(key) {
    return {
      ready: () => {
        registers[key] = true;
@@ -257,11 +273,8 @@ index 4ea2dc1..cba5f58 100644
      }
    };
  }
-@@ -845,10 +889,15 @@ function AnalyticsProvider({
-   const [analyticsLoaded, setAnalyticsLoaded] = useState(
-     customCanTrack ? true : false
+@@ -847,8 +890,12 @@ function AnalyticsProvider({
    );
-+
    const [carts, setCarts] = useState({ cart: null, prevCart: null });
    const [canTrack, setCanTrack] = useState(
 -    customCanTrack ? () => customCanTrack : () => shopifyCanTrack
@@ -274,7 +287,7 @@ index 4ea2dc1..cba5f58 100644
    if (!!shop) {
      if (/\/68817551382$/.test(shop.shopId)) {
        warnOnce(
-@@ -880,34 +929,63 @@ function AnalyticsProvider({
+@@ -880,34 +927,65 @@ function AnalyticsProvider({
        }
      }
    }
@@ -296,11 +309,13 @@ index 4ea2dc1..cba5f58 100644
 +  useEffect(() => {
 +    if (analyticsLoaded) {
 +      const isCanTrack = canTrack()
-+      setPub(isCanTrack ? () => {
-+          console.log('publish: can track real publish set');
-+          return publish
-+        } : () => {
-+          console.log('publish: is no-op because canTrack is false')
++      setPub(isCanTrack
++        ? () => {
++            console.log('publish: can track real publish set');
++            return publish
++          }
++        : () => {
++        console.log('publish: is no-op because canTrack is false')
 +      })
 +    }
 +  }, [analyticsLoaded, canTrack, setPub])
@@ -335,7 +350,7 @@ index 4ea2dc1..cba5f58 100644
 -    getPrivacyBanner
 -  ]);
 +    }
-+  }, [JSON.stringify(pub), analyticsLoaded, canTrack, carts, customData, shop, getCustomerPrivacy, getPrivacyBanner, register, subscribe]);
++  }, [pub, analyticsLoaded, canTrack, carts, customData, shop, getCustomerPrivacy, getPrivacyBanner, register, subscribe]);
 +
 +  console.log('-------------------------')
 +  console.log(JSON.stringify(value))
