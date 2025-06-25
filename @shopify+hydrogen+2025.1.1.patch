@@ -1,0 +1,701 @@
+diff --git a/node_modules/@shopify/hydrogen/dist/development/index.js b/node_modules/@shopify/hydrogen/dist/development/index.js
+index 4ea2dc1..72ef6d7 100644
+--- a/node_modules/@shopify/hydrogen/dist/development/index.js
++++ b/node_modules/@shopify/hydrogen/dist/development/index.js
+@@ -10,6 +10,7 @@ import cspBuilder from 'content-security-policy-builder';
+ function AnalyticsView(props) {
+   const { type, data = {}, customData } = props;
+   const location = useLocation();
++
+   const {
+     publish: publish2,
+     cart,
+@@ -17,7 +18,9 @@ function AnalyticsView(props) {
+     shop,
+     customData: analyticProviderCustomData
+   } = useAnalytics();
++
+   const url = location.pathname + location.search;
++
+   let viewPayload2 = {
+     ...data,
+     customData: {
+@@ -28,16 +31,23 @@ function AnalyticsView(props) {
+     prevCart,
+     shop
+   };
++
+   useEffect(() => {
+-    if (!shop?.shopId) return;
++    console.log("[h2:debug:AnalyticsView] - Publishing view event", type, viewPayload2);
++    if (!shop?.shopId) {
++      console.error('[h2:error:AnalyticsView] - shopId is required for analytics events. Make sure to pass the shop prop to <Analytics.Provider> or use <Analytics.Provider shop={shop}>.');
++      return;
++    }
+     viewPayload2 = {
+       ...viewPayload2,
+       url: window.location.href
+     };
+     publish2(type, viewPayload2);
+   }, [publish2, url, shop?.shopId]);
++
+   return null;
+ }
++
+ function AnalyticsPageView(props) {
+   return /* @__PURE__ */ jsx(AnalyticsView, { ...props, type: "page_viewed" });
+ }
+@@ -72,29 +82,66 @@ var AnalyticsEvent = {
+   // Custom
+   CUSTOM_EVENT: `custom_`
+ };
++
+ var CONSENT_API = "https://cdn.shopify.com/shopifycloud/consent-tracking-api/v0.1/consent-tracking-api.js";
+ var CONSENT_API_WITH_BANNER = "https://cdn.shopify.com/shopifycloud/privacy-banner/storefront-banner.js";
++
+ function logMissingConfig(fieldName) {
+   console.error(
+     `[h2:error:useCustomerPrivacy] Unable to setup Customer Privacy API: Missing consent.${fieldName} configuration.`
+   );
+ }
++
+ function useCustomerPrivacy(props) {
++  const { subscribe: subscribe2, register: register2, canTrack } = useAnalytics();
++  const { ready: customerPrivacyReady } = register2("Customer_Privacy");
+   const {
+     withPrivacyBanner = false,
+     onVisitorConsentCollected,
+     onReady,
+     ...consentConfig
+   } = props;
+-  useLoadScript(withPrivacyBanner ? CONSENT_API_WITH_BANNER : CONSENT_API, {
++
++  const status = useLoadScript(withPrivacyBanner ? CONSENT_API_WITH_BANNER : CONSENT_API, {
+     attributes: {
+       id: "customer-privacy-api"
+     }
+   });
++
++  console.log('[debug:useCustomerPrivacy] - useLoadScript status:', status);
++
+   const { observing, setLoaded } = useApisLoaded({
+     withPrivacyBanner,
+-    onLoaded: onReady
++    onLoaded: (event) => {
++      setTimeout(() => {
++        onReady(event)
++        customerPrivacyReady()
++      }, 10)
++    }
+   });
++
++  function emitCustomerPrivacyApiLoaded() {
++    console.log('[debug:emitCustomerPrivacyApiLoaded] - emitCustomerPrivacyApiLoaded hasEmitted', hasEmitted);
++    if (hasEmitted) return;
++    hasEmitted = true;
++    setTimeout(() => {
++      const event = new CustomEvent("shopifyCustomerPrivacyApiLoaded", {bubbles: true, cancelable: true});
++      document.dispatchEvent(event);
++    }, 100)
++  }
++
++
++
++  function emitPrivacyBannerApiLoaded() {
++    console.log('[debug:emitPrivacyBannerApiLoaded] - emitPrivacyBannerApiLoaded hasEmitted', hasEmittedBanner);
++    if (hasEmittedBanner) return;
++    hasEmittedBanner = true;
++    setTimeout(() => {
++      const event = new CustomEvent("emitPrivacyBannerApiLoaded", {bubbles: true, cancelable: true});
++      document.dispatchEvent(event);
++    }, 100)
++  }
++
+   const config = useMemo(() => {
+     const { checkoutDomain, storefrontAccessToken } = consentConfig;
+     if (!checkoutDomain) logMissingConfig("checkoutDomain");
+@@ -107,12 +154,14 @@ function useCustomerPrivacy(props) {
+     const config2 = {
+       checkoutRootDomain: checkoutDomain,
+       storefrontAccessToken,
++      accessToken: storefrontAccessToken,
+       storefrontRootDomain: parseStoreDomain(checkoutDomain),
+       country: consentConfig.country,
+       locale: consentConfig.locale
+     };
+     return config2;
+   }, [consentConfig, parseStoreDomain, logMissingConfig]);
++
+   useEffect(() => {
+     const consentCollectedHandler = (event) => {
+       if (onVisitorConsentCollected) {
+@@ -130,6 +179,27 @@ function useCustomerPrivacy(props) {
+       );
+     };
+   }, [onVisitorConsentCollected]);
++
++  useEffect(() => {
++    if (!withPrivacyBanner) return
++    function loadBanner() {
++      console.log('[debug:useCustomerPrivacy] - loadBanner', config, window?.privacyBanner);
++
++      if (!window?.privacyBanner) {
++        console.error(
++          '[h2:error:useCustomerPrivacy] - Privacy Banner API is not loaded. Make sure to use the `withPrivacyBanner` option.'
++        )
++      }  else {
++        console.log('[debug:useCustomerPrivacy] - loadBanner called with config', config)
++        window.privacyBanner.loadBanner(config);
++      }
++    }
++    document.addEventListener('shopifyCustomerPrivacyApiLoaded', loadBanner);
++    return () => {
++      document.removeEventListener('shopifyCustomerPrivacyApiLoaded', loadBanner);
++    }
++  }, [withPrivacyBanner, config, window, window?.privacyBanner]);
++
+   useEffect(() => {
+     if (!withPrivacyBanner || observing.current.privacyBanner) return;
+     observing.current.privacyBanner = true;
+@@ -142,13 +212,10 @@ function useCustomerPrivacy(props) {
+       set(value) {
+         if (typeof value === "object" && value !== null && "showPreferences" in value && "loadBanner" in value) {
+           const privacyBanner = value;
+-          privacyBanner.loadBanner(config);
+-          customPrivacyBanner = overridePrivacyBannerMethods({
+-            privacyBanner,
+-            config
+-          });
++          console.log('loadBanner', config)
++          customPrivacyBanner = overridePrivacyBannerMethods({ privacyBanner, config });
+           setLoaded.privacyBanner();
+-          emitCustomerPrivacyApiLoaded();
++          emitPrivacyBannerApiLoaded();
+         }
+       }
+     };
+@@ -157,9 +224,12 @@ function useCustomerPrivacy(props) {
+     withPrivacyBanner,
+     config,
+     overridePrivacyBannerMethods,
+-    setLoaded.privacyBanner
++    setLoaded.privacyBanner,
++    status
+   ]);
++
+   useEffect(() => {
++    console.log('[debug:useCustomerPrivacy] - useEffect: Observing customerPrivacy', window?.Shopify);
+     if (observing.current.customerPrivacy) return;
+     observing.current.customerPrivacy = true;
+     let customCustomerPrivacy = null;
+@@ -183,26 +253,33 @@ function useCustomerPrivacy(props) {
+                 customCustomerPrivacy = {
+                   ...customerPrivacy,
+                   setTrackingConsent: overrideCustomerPrivacySetTrackingConsent(
+-                    { customerPrivacy, config }
+-                  )
+-                };
+-                customShopify = {
+-                  ...customShopify,
+-                  customerPrivacy: customCustomerPrivacy
+-                };
+-                setLoaded.customerPrivacy();
+-                emitCustomerPrivacyApiLoaded();
+-              }
++                  { customerPrivacy, config }
++                )
++              };
++              customShopify = {
++                ...customShopify,
++                customerPrivacy: customCustomerPrivacy,
++
++                // override the customerPrivacy object in Shopify
++                country: config.country,
++                locale: config.locale,
++                accessToken: config.storefrontAccessToken,
++              };
++              setLoaded.customerPrivacy();
++              emitCustomerPrivacyApiLoaded();
+             }
+-          });
+-        }
++          }
++        });
+       }
+-    });
+-  }, [
+-    config,
+-    overrideCustomerPrivacySetTrackingConsent,
+-    setLoaded.customerPrivacy
+-  ]);
++    }
++  });
++}, [
++  config,
++  overrideCustomerPrivacySetTrackingConsent,
++  setLoaded.customerPrivacy,
++  emitCustomerPrivacyApiLoaded,
++  status
++]);
+   const result = {
+     customerPrivacy: getCustomerPrivacy()
+   };
+@@ -211,13 +288,10 @@ function useCustomerPrivacy(props) {
+   }
+   return result;
+ }
++
+ var hasEmitted = false;
+-function emitCustomerPrivacyApiLoaded() {
+-  if (hasEmitted) return;
+-  hasEmitted = true;
+-  const event = new CustomEvent("shopifyCustomerPrivacyApiLoaded");
+-  document.dispatchEvent(event);
+-}
++var hasEmittedBanner = false;
++
+ function useApisLoaded({
+   withPrivacyBanner,
+   onLoaded
+@@ -230,8 +304,10 @@ function useApisLoaded({
+   const setLoaded = {
+     customerPrivacy: () => {
+       if (withPrivacyBanner) {
++        console.log('useApisLoaded: Customer Privacy API loaded');
+         setApisLoaded((prev) => [true, prev[1]]);
+       } else {
++        console.log('useApisLoaded: Customer Privacy API loaded without Privacy Banner');
+         setApisLoaded(() => [true]);
+       }
+     },
+@@ -239,6 +315,7 @@ function useApisLoaded({
+       if (!withPrivacyBanner) {
+         return;
+       }
++      console.log('useApisLoaded: Privacy Banner API loaded');
+       setApisLoaded((prev) => [prev[0], true]);
+     }
+   };
+@@ -262,12 +339,15 @@ function parseStoreDomain(checkoutDomain) {
+   });
+   return sameDomainParts.reverse().join(".");
+ }
++
+ function overrideCustomerPrivacySetTrackingConsent({
+   customerPrivacy,
+   config
+ }) {
++  console.log('overrideCustomerPrivacySetTrackingConsent', config);
+   const original = customerPrivacy.setTrackingConsent;
+   const { locale, country, ...rest } = config;
++
+   function updatedSetTrackingConsent(consent, callback) {
+     original(
+       {
+@@ -280,10 +360,12 @@ function overrideCustomerPrivacySetTrackingConsent({
+   }
+   return updatedSetTrackingConsent;
+ }
++
+ function overridePrivacyBannerMethods({
+   privacyBanner,
+   config
+ }) {
++  console.log('overridePrivacyBannerMethods', config);
+   const originalLoadBanner = privacyBanner.loadBanner;
+   const originalShowPreferences = privacyBanner.showPreferences;
+   function loadBanner(userConfig) {
+@@ -302,6 +384,7 @@ function overridePrivacyBannerMethods({
+   }
+   return { loadBanner, showPreferences };
+ }
++
+ function getCustomerPrivacy() {
+   try {
+     return window.Shopify && window.Shopify.customerPrivacy ? window.Shopify?.customerPrivacy : null;
+@@ -309,6 +392,7 @@ function getCustomerPrivacy() {
+     return null;
+   }
+ }
++
+ function getPrivacyBanner() {
+   try {
+     return window && window?.privacyBanner ? window.privacyBanner : null;
+@@ -324,62 +408,77 @@ var version = "2025.1.1";
+ function getCustomerPrivacyRequired() {
+   const customerPrivacy = getCustomerPrivacy();
+   if (!customerPrivacy) {
+-    throw new Error(
+-      "Shopify Customer Privacy API not available. Must be used within a useEffect. Make sure to load the Shopify Customer Privacy API with useCustomerPrivacy() or <AnalyticsProvider>."
+-    );
++    throw new Error( "getCustomerPrivacyRequired: Shopify Customer Privacy API not available");
+   }
+   return customerPrivacy;
+ }
+-function ShopifyAnalytics({
+-  consent,
+-  onReady,
+-  domain
+-}) {
++
++function ShopifyAnalytics({ consent, onReady, domain }) {
+   const { subscribe: subscribe2, register: register2, canTrack } = useAnalytics();
+   const [shopifyReady, setShopifyReady] = useState(false);
+   const [privacyReady, setPrivacyReady] = useState(false);
+   const init = useRef(false);
+   const { checkoutDomain, storefrontAccessToken, language } = consent;
+   const { ready: shopifyAnalyticsReady } = register2("Internal_Shopify_Analytics");
++
+   useCustomerPrivacy({
+     ...consent,
+     locale: language,
+     checkoutDomain: !checkoutDomain ? "mock.shop" : checkoutDomain,
+     storefrontAccessToken: !storefrontAccessToken ? "abcdefghijklmnopqrstuvwxyz123456" : storefrontAccessToken,
+-    onVisitorConsentCollected: () => setPrivacyReady(true),
+-    onReady: () => setPrivacyReady(true)
++    onVisitorConsentCollected: () => {
++      setPrivacyReady(true)
++      console.log('useCustomerPrivacy: Customer Privacy API loaded, onVisitorConsentCollected called');
++    },
++    onReady: () => {
++      console.log('useCustomerPrivacy: Customer Privacy API loaded, onReady called');
++      setPrivacyReady(true)
++    }
+   });
++
+   useShopifyCookies({
+     hasUserConsent: privacyReady ? canTrack() : true,
+     // must be initialized with true
+     domain,
+     checkoutDomain
+   });
++
++  useEffect(() => {
++    console.log('ShopifyAnalytics: useEffect - shopifyReady', shopifyReady, 'privacyReady', privacyReady);
++    if (shopifyReady && privacyReady) {
++      shopifyAnalyticsReady();
++      onReady();
++      console.log(
++        'ShopifyAnalytics: Shopify Analytics API loaded'
++      )
++    }
++  }, [shopifyReady, privacyReady, onReady]);
++
+   useEffect(() => {
+-    if (init.current) return;
++    if (init.current || !privacyReady) return;
+     init.current = true;
+     subscribe2(AnalyticsEvent.PAGE_VIEWED, pageViewHandler);
+     subscribe2(AnalyticsEvent.PRODUCT_VIEWED, productViewHandler);
+     subscribe2(AnalyticsEvent.COLLECTION_VIEWED, collectionViewHandler);
+     subscribe2(AnalyticsEvent.SEARCH_VIEWED, searchViewHandler);
+     subscribe2(AnalyticsEvent.PRODUCT_ADD_TO_CART, productAddedToCartHandler);
++    console.log('ShopifyAnalytics: Subscribed to analytics events, initialized');
+     setShopifyReady(true);
+-  }, [subscribe2]);
+-  useEffect(() => {
+-    if (shopifyReady && privacyReady) {
+-      shopifyAnalyticsReady();
+-      onReady();
+-    }
+-  }, [shopifyReady, privacyReady, onReady]);
++  }, [subscribe2, privacyReady, setShopifyReady, pageViewHandler, productViewHandler, collectionViewHandler, searchViewHandler, productAddedToCartHandler]);
++
++
++
+   return null;
+ }
++
+ function logMissingConfig2(fieldName) {
+   console.error(
+     `[h2:error:ShopifyAnalytics] Unable to send Shopify analytics: Missing shop.${fieldName} configuration.`
+   );
+ }
++
+ function prepareBasePageViewPayload(payload) {
+-  const customerPrivacy = getCustomerPrivacyRequired();
++  const customerPrivacy = window.Shopify?.customerPrivacy || getCustomerPrivacyRequired();
+   const hasUserConsent = customerPrivacy.analyticsProcessingAllowed();
+   if (!payload?.shop?.shopId) {
+     logMissingConfig2("shopId");
+@@ -411,6 +510,7 @@ function prepareBasePageViewPayload(payload) {
+   };
+   return eventPayload;
+ }
++
+ function prepareBaseCartPayload(payload, cart) {
+   if (cart === null) return;
+   const pageViewPayload = prepareBasePageViewPayload(payload);
+@@ -421,7 +521,9 @@ function prepareBaseCartPayload(payload, cart) {
+   };
+   return eventPayload;
+ }
++
+ var viewPayload = {};
++
+ function pageViewHandler(payload) {
+   const eventPayload = prepareBasePageViewPayload(payload);
+   if (!eventPayload) return;
+@@ -434,6 +536,7 @@ function pageViewHandler(payload) {
+   });
+   viewPayload = {};
+ }
++
+ function productViewHandler(payload) {
+   let eventPayload = prepareBasePageViewPayload(payload);
+   if (eventPayload && validateProducts({
+@@ -456,6 +559,7 @@ function productViewHandler(payload) {
+     });
+   }
+ }
++
+ function collectionViewHandler(payload) {
+   let eventPayload = prepareBasePageViewPayload(payload);
+   if (!eventPayload) return;
+@@ -474,6 +578,7 @@ function collectionViewHandler(payload) {
+     payload: eventPayload
+   });
+ }
++
+ function searchViewHandler(payload) {
+   let eventPayload = prepareBasePageViewPayload(payload);
+   if (!eventPayload) return;
+@@ -490,6 +595,7 @@ function searchViewHandler(payload) {
+     payload: eventPayload
+   });
+ }
++
+ function productAddedToCartHandler(payload) {
+   const { cart, currentLine } = payload;
+   const eventPayload = prepareBaseCartPayload(payload, cart);
+@@ -499,6 +605,7 @@ function productAddedToCartHandler(payload) {
+     eventPayload
+   });
+ }
++
+ function sendCartAnalytics({
+   matchedLine,
+   eventPayload
+@@ -593,11 +700,13 @@ function formatProduct(products) {
+     return formattedProduct;
+   });
+ }
++
+ function logMissingField(fieldName) {
+   console.error(
+     `[h2:error:CartAnalytics] Can't set up cart analytics events because the \`cart.${fieldName}\` value is missing from your GraphQL cart query. In your project, search for where \`fragment CartApiQuery on Cart\` is defined and make sure \`${fieldName}\` is part of your cart query. Check the Hydrogen Skeleton template for reference: https://github.com/Shopify/hydrogen/blob/main/templates/skeleton/app/lib/fragments.ts#L59.`
+   );
+ }
++
+ function CartAnalytics({
+   cart: currentCart,
+   setCarts
+@@ -716,6 +825,7 @@ function PerfKit({ shop }) {
+     if (scriptStatus !== "done" || loadedEvent.current) return;
+     loadedEvent.current = true;
+     subscribe2(AnalyticsEvent.PAGE_VIEWED, () => {
++      console.log("[h2:debug:PerfKit] - Page viewed event received, navigating PerfKit");
+       window.PerfKit?.navigate();
+     });
+     subscribe2(AnalyticsEvent.PRODUCT_VIEWED, () => {
+@@ -756,12 +866,11 @@ var defaultAnalyticsContext = {
+   customData: {},
+   prevCart: null,
+   publish: () => {
++    console.log('defaultAnalyticsContext: publish is no-op because canTrack is no-op by default');
+   },
+   shop: null,
+-  subscribe: () => {
+-  },
+-  register: () => ({ ready: () => {
+-  } }),
++  subscribe: () => {},
++  register: () => ({ ready: () => { console.log('register: no-op default')} }),
+   customerPrivacy: null,
+   privacyBanner: null
+ };
+@@ -776,20 +885,34 @@ function areRegistersReady() {
+ function subscribe(event, callback) {
+   if (!subscribers.has(event)) {
+     subscribers.set(event, /* @__PURE__ */ new Map());
++    console.log(`subscribe: created new event ${event} in subscribers map`);
+   }
++  console.log(`subscribe: adding callback for event ${event}`, callback.toString());
+   subscribers.get(event)?.set(callback.toString(), callback);
+ }
+ var waitForReadyQueue = /* @__PURE__ */ new Map();
++
+ function publish(event, payload) {
++  console.log('publish: real areRegistersReady()?', areRegistersReady());
+   if (!areRegistersReady()) {
++    console.log(`publish: ${event} is waiting for registers to be ready`);
+     waitForReadyQueue.set(event, payload);
+     return;
+   }
++    if (!shopifyCanTrack()) {
++    console.warn(
++      'publish: Shopify cannot track analytics events because customer privacy API is not ready or consent is not given.'
++    )
++    return;
++  }
++
+   publishEvent(event, payload);
+ }
++
+ function publishEvent(event, payload) {
+   (subscribers.get(event) ?? /* @__PURE__ */ new Map()).forEach((callback, subscriber) => {
+     try {
++      console.log(`publishEvent: ${event}`)
+       callback(payload);
+     } catch (error) {
+       if (typeof error === "object" && error instanceof Error) {
+@@ -800,7 +923,7 @@ function publishEvent(event, payload) {
+           error.stack
+         );
+       } else {
+-        console.error("Analytics publish error", error, subscriber);
++        console.error("publishEvent: Analytics publish error", error, subscriber);
+       }
+     }
+   });
+@@ -812,12 +935,17 @@ function register(key) {
+   return {
+     ready: () => {
+       registers[key] = true;
++      console.log(`registered: ${key} is ready publishing events`, waitForReadyQueue.size, 'events in queue');
++
+       if (areRegistersReady() && waitForReadyQueue.size > 0) {
+         waitForReadyQueue.forEach((queuePayload, queueEvent) => {
+           publishEvent(queueEvent, queuePayload);
+         });
+         waitForReadyQueue.clear();
++      } else {
++        console.log(`registered: ${key} is ready no events to publish`);
+       }
++
+     }
+   };
+ }
+@@ -847,8 +975,11 @@ function AnalyticsProvider({
+   );
+   const [carts, setCarts] = useState({ cart: null, prevCart: null });
+   const [canTrack, setCanTrack] = useState(
+-    customCanTrack ? () => customCanTrack : () => shopifyCanTrack
++    customCanTrack
++      ? () => customCanTrack
++      : () => shopifyCanTrack
+   );
++
+   if (!!shop) {
+     if (/\/68817551382$/.test(shop.shopId)) {
+       warnOnce(
+@@ -880,34 +1011,45 @@ function AnalyticsProvider({
+       }
+     }
+   }
+-  const value = useMemo(() => {
+-    return {
+-      canTrack,
+-      ...carts,
+-      customData,
+-      publish: canTrack() ? publish : () => {
+-      },
+-      shop,
+-      subscribe,
+-      register,
+-      customerPrivacy: getCustomerPrivacy(),
+-      privacyBanner: getPrivacyBanner()
+-    };
+-  }, [
+-    analyticsLoaded,
++
++  console.log('consent', consent)
++
++  function getCustomerPrivacy() {
++    try {
++      return window.Shopify && window.Shopify.customerPrivacy
++        ? window.Shopify?.customerPrivacy
++        : null;
++    } catch (e) {
++      return null;
++    }
++  }
++
++  function getPrivacyBanner() {
++    try {
++      return window && window?.privacyBanner ? window.privacyBanner : null;
++    } catch (e) {
++      return null;
++    }
++  }
++
++  const value =  {
+     canTrack,
+-    carts,
+-    carts.cart?.updatedAt,
+-    carts.prevCart,
+-    publish,
+-    subscribe,
++    ...carts,
+     customData,
++    publish,
+     shop,
++    subscribe,
+     register,
+-    JSON.stringify(registers),
+-    getCustomerPrivacy,
+-    getPrivacyBanner
+-  ]);
++    customerPrivacy: getCustomerPrivacy(),
++    privacyBanner: getPrivacyBanner(),
++    analyticsLoaded,
++  }
++
++  console.log('-------------------------')
++  console.log(JSON.stringify(value))
++  console.log('-------------------------')
++
++
+   return /* @__PURE__ */ jsxs(AnalyticsContext.Provider, { value, children: [
+     children,
+     !!shop && /* @__PURE__ */ jsx(AnalyticsPageView, {}),
+@@ -918,10 +1060,13 @@ function AnalyticsProvider({
+         consent,
+         onReady: () => {
+           listenerSet.current = true;
+-          setAnalyticsLoaded(true);
++          console.log('ShopifyAnalytics:onReady shopifyCanTrack', typeof shopifyCanTrack, shopifyCanTrack());
+           setCanTrack(
+-            customCanTrack ? () => customCanTrack : () => shopifyCanTrack
++            customCanTrack
++              ? () => customCanTrack
++              : () => shopifyCanTrack
+           );
++          setAnalyticsLoaded(true);
+         },
+         domain: cookieDomain
+       }
+@@ -929,6 +1074,7 @@ function AnalyticsProvider({
+     !!shop && /* @__PURE__ */ jsx(PerfKit, { shop })
+   ] });
+ }
++
+ function useAnalytics() {
+   const analyticsContext = useContext(AnalyticsContext);
+   if (!analyticsContext) {
+@@ -938,6 +1084,7 @@ function useAnalytics() {
+   }
+   return analyticsContext;
+ }
++
+ function useShopAnalytics(shopProp) {
+   const [shop, setShop] = useState(null);
+   useEffect(() => {
+@@ -947,6 +1094,7 @@ function useShopAnalytics(shopProp) {
+   }, [setShop, shopProp]);
+   return { shop };
+ }
++
+ async function getShopAnalytics({
+   storefront,
+   publicStorefrontId = "0"
