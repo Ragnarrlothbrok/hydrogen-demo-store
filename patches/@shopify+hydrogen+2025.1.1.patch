@@ -1,5 +1,5 @@
 diff --git a/node_modules/@shopify/hydrogen/dist/development/index.js b/node_modules/@shopify/hydrogen/dist/development/index.js
-index 4ea2dc1..2b2043c 100644
+index 4ea2dc1..3c28663 100644
 --- a/node_modules/@shopify/hydrogen/dist/development/index.js
 +++ b/node_modules/@shopify/hydrogen/dist/development/index.js
 @@ -86,6 +86,8 @@ function useCustomerPrivacy(props) {
@@ -28,43 +28,28 @@ index 4ea2dc1..2b2043c 100644
    const config = useMemo(() => {
      const { checkoutDomain, storefrontAccessToken } = consentConfig;
      if (!checkoutDomain) logMissingConfig("checkoutDomain");
-@@ -130,6 +139,35 @@ function useCustomerPrivacy(props) {
+@@ -130,6 +139,20 @@ function useCustomerPrivacy(props) {
        );
      };
    }, [onVisitorConsentCollected]);
 +  useEffect(() => {
 +    if (!withPrivacyBanner) return;
 +    function loadBanner() {
-+      console.log(
-+        '[debug:useCustomerPrivacy] - loadBanner',
-+        config,
-+        window?.privacyBanner,
-+      );
-+
 +      if (!window?.privacyBanner) {
-+        console.error(
-+          '[h2:error:useCustomerPrivacy] - Privacy Banner API is not loaded. Make sure to use the `withPrivacyBanner` option.',
-+        );
++        console.error( '[h2:error:useCustomerPrivacy] - Privacy Banner API is not loaded in time.');
 +      } else {
-+        console.log(
-+          '[debug:useCustomerPrivacy] - loadBanner called with config',
-+          config,
-+        );
 +        window.privacyBanner.loadBanner(config);
 +      }
 +    }
 +    document.addEventListener('shopifyCustomerPrivacyApiLoaded', loadBanner);
 +    return () => {
-+      document.removeEventListener(
-+        'shopifyCustomerPrivacyApiLoaded',
-+        loadBanner,
-+      );
++      document.removeEventListener( 'shopifyCustomerPrivacyApiLoaded', loadBanner);
 +    };
 +  }, [withPrivacyBanner, config, window, window?.privacyBanner]);
    useEffect(() => {
      if (!withPrivacyBanner || observing.current.privacyBanner) return;
      observing.current.privacyBanner = true;
-@@ -142,13 +180,12 @@ function useCustomerPrivacy(props) {
+@@ -142,13 +165,12 @@ function useCustomerPrivacy(props) {
        set(value) {
          if (typeof value === "object" && value !== null && "showPreferences" in value && "loadBanner" in value) {
            const privacyBanner = value;
@@ -79,7 +64,7 @@ index 4ea2dc1..2b2043c 100644
          }
        }
      };
-@@ -188,7 +225,10 @@ function useCustomerPrivacy(props) {
+@@ -188,7 +210,10 @@ function useCustomerPrivacy(props) {
                  };
                  customShopify = {
                    ...customShopify,
@@ -91,7 +76,7 @@ index 4ea2dc1..2b2043c 100644
                  };
                  setLoaded.customerPrivacy();
                  emitCustomerPrivacyApiLoaded();
-@@ -212,12 +252,32 @@ function useCustomerPrivacy(props) {
+@@ -212,12 +237,32 @@ function useCustomerPrivacy(props) {
    return result;
  }
  var hasEmitted = false;
