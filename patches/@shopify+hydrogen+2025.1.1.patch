@@ -1,8 +1,32 @@
 diff --git a/node_modules/@shopify/hydrogen/dist/development/index.js b/node_modules/@shopify/hydrogen/dist/development/index.js
-index 4ea2dc1..2058ec3 100644
+index 4ea2dc1..1374ad8 100644
 --- a/node_modules/@shopify/hydrogen/dist/development/index.js
 +++ b/node_modules/@shopify/hydrogen/dist/development/index.js
-@@ -212,6 +212,7 @@ function useCustomerPrivacy(props) {
+@@ -86,6 +86,8 @@ function useCustomerPrivacy(props) {
+     onReady,
+     ...consentConfig
+   } = props;
++  const {register: register2} = useAnalytics();
++  const {ready: customerPrivacyReady} = register2('Customer_Privacy');
+   useLoadScript(withPrivacyBanner ? CONSENT_API_WITH_BANNER : CONSENT_API, {
+     attributes: {
+       id: "customer-privacy-api"
+@@ -93,7 +95,13 @@ function useCustomerPrivacy(props) {
+   });
+   const { observing, setLoaded } = useApisLoaded({
+     withPrivacyBanner,
+-    onLoaded: onReady
++    onLoaded: (event) => {
++      setTimeout(() => {
++        onReady(event);
++        customerPrivacyReady();
++      }, 10);
++    },
++
+   });
+   const config = useMemo(() => {
+     const { checkoutDomain, storefrontAccessToken } = consentConfig;
+@@ -212,6 +220,7 @@ function useCustomerPrivacy(props) {
    return result;
  }
  var hasEmitted = false;
