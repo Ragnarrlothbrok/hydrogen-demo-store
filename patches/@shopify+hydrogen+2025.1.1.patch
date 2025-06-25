@@ -1,5 +1,5 @@
 diff --git a/node_modules/@shopify/hydrogen/dist/development/index.js b/node_modules/@shopify/hydrogen/dist/development/index.js
-index 4ea2dc1..1374ad8 100644
+index 4ea2dc1..f19781d 100644
 --- a/node_modules/@shopify/hydrogen/dist/development/index.js
 +++ b/node_modules/@shopify/hydrogen/dist/development/index.js
 @@ -86,6 +86,8 @@ function useCustomerPrivacy(props) {
@@ -11,7 +11,7 @@ index 4ea2dc1..1374ad8 100644
    useLoadScript(withPrivacyBanner ? CONSENT_API_WITH_BANNER : CONSENT_API, {
      attributes: {
        id: "customer-privacy-api"
-@@ -93,7 +95,13 @@ function useCustomerPrivacy(props) {
+@@ -93,8 +95,15 @@ function useCustomerPrivacy(props) {
    });
    const { observing, setLoaded } = useApisLoaded({
      withPrivacyBanner,
@@ -24,9 +24,23 @@ index 4ea2dc1..1374ad8 100644
 +    },
 +
    });
++
    const config = useMemo(() => {
      const { checkoutDomain, storefrontAccessToken } = consentConfig;
-@@ -212,6 +220,7 @@ function useCustomerPrivacy(props) {
+     if (!checkoutDomain) logMissingConfig("checkoutDomain");
+@@ -188,7 +197,10 @@ function useCustomerPrivacy(props) {
+                 };
+                 customShopify = {
+                   ...customShopify,
+-                  customerPrivacy: customCustomerPrivacy
++                  customerPrivacy: customCustomerPrivacy,
++                  country: config.country,
++                  locale: config.locale,
++                  accessToken: config.storefrontAccessToken,
+                 };
+                 setLoaded.customerPrivacy();
+                 emitCustomerPrivacyApiLoaded();
+@@ -212,6 +224,7 @@ function useCustomerPrivacy(props) {
    return result;
  }
  var hasEmitted = false;
