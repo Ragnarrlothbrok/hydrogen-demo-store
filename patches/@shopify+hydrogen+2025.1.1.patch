@@ -1,5 +1,5 @@
 diff --git a/node_modules/@shopify/hydrogen/dist/development/index.js b/node_modules/@shopify/hydrogen/dist/development/index.js
-index 4ea2dc1..2982a6f 100644
+index 4ea2dc1..26fa66a 100644
 --- a/node_modules/@shopify/hydrogen/dist/development/index.js
 +++ b/node_modules/@shopify/hydrogen/dist/development/index.js
 @@ -86,6 +86,8 @@ function useCustomerPrivacy(props) {
@@ -64,7 +64,13 @@ index 4ea2dc1..2982a6f 100644
    useEffect(() => {
      if (!withPrivacyBanner || observing.current.privacyBanner) return;
      observing.current.privacyBanner = true;
-@@ -148,7 +186,7 @@ function useCustomerPrivacy(props) {
+@@ -142,13 +180,12 @@ function useCustomerPrivacy(props) {
+       set(value) {
+         if (typeof value === "object" && value !== null && "showPreferences" in value && "loadBanner" in value) {
+           const privacyBanner = value;
+-          privacyBanner.loadBanner(config);
+           customPrivacyBanner = overridePrivacyBannerMethods({
+             privacyBanner,
              config
            });
            setLoaded.privacyBanner();
@@ -73,7 +79,7 @@ index 4ea2dc1..2982a6f 100644
          }
        }
      };
-@@ -188,7 +226,10 @@ function useCustomerPrivacy(props) {
+@@ -188,7 +225,10 @@ function useCustomerPrivacy(props) {
                  };
                  customShopify = {
                    ...customShopify,
@@ -85,7 +91,7 @@ index 4ea2dc1..2982a6f 100644
                  };
                  setLoaded.customerPrivacy();
                  emitCustomerPrivacyApiLoaded();
-@@ -212,12 +253,31 @@ function useCustomerPrivacy(props) {
+@@ -212,12 +252,31 @@ function useCustomerPrivacy(props) {
    return result;
  }
  var hasEmitted = false;
