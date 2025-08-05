@@ -11,3 +11,5 @@ node_modules
 /test-results/
 /playwright-report/
 /playwright/.cache/
+# Hydrogen test upgrade script
+h2-test-upgrade
