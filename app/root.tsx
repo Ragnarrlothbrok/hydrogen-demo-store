@@ -31,6 +31,7 @@ import {NotFound} from '~/components/NotFound';
 import favicon from '~/assets/favicon.svg';
 import {seoPayload} from '~/lib/seo.server';
 import styles from '~/styles/app.css?url';
+import SmartcodeTest from '~/components/SmartcodeTest';
 
 import {DEFAULT_LOCALE, parseMenu} from './lib/utils';
 
@@ -155,6 +156,7 @@ function Layout({children}: {children?: React.ReactNode}) {
         <Links />
       </head>
       <body>
+        <SmartcodeTest />
         {data ? (
           <Analytics.Provider
             cart={data.cart}
